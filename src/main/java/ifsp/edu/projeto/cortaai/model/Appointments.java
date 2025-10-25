@@ -1,16 +1,9 @@
 package ifsp.edu.projeto.cortaai.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import ifsp.edu.projeto.cortaai.model.enums.AppointmentStatus;
+import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -30,23 +23,45 @@ public class Appointments {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
-    private OffsetDateTime datetime;
-
+    // ONDE (a loja)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "barber_id")
+    @JoinColumn(name = "barbershop_id", nullable = false)
+    private Barbershop barbershop;
+
+    // COM QUEM (o barbeiro)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "barber_id", nullable = false)
     private Barber barber;
 
+    // QUEM (o cliente)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
+    @Column(name = "start_time", nullable = false)
+    private OffsetDateTime startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private OffsetDateTime endTime;
+
+    @Column(nullable = false, length = 50)
+    @Enumerated(EnumType.STRING)
+    private AppointmentStatus status;
+
     @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @Column(name = "date_created", nullable = false, updatable = false)
     private OffsetDateTime dateCreated;
 
     @LastModifiedDate
-    @Column(nullable = false)
+    @Column(name = "last_updated", nullable = false)
     private OffsetDateTime lastUpdated;
 
+    // Relacionamento: N Agendamentos contêm N Serviços
+    @ManyToMany
+    @JoinTable(
+            name = "appointment_services",
+            joinColumns = @JoinColumn(name = "appointment_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_id")
+    )
+    private Set<Service> services;
 }

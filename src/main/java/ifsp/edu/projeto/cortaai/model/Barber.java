@@ -1,15 +1,8 @@
 package ifsp.edu.projeto.cortaai.model;
 
-import ifsp.edu.projeto.cortaai.model.enums.BarberSkills;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.Set;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -40,32 +33,43 @@ public class Barber {
     @Column(nullable = false, unique = true, length = 70)
     private String email;
 
-    @Column(name = "documentCpf", nullable = false, unique = true, length = 11)
+    @Column(name = "document_cpf", nullable = false, unique = true, length = 11)
     private String documentCPF;
 
-    @Column(nullable = false, length = 70) // ADICIONE ESTE CAMPO
+    @Column(nullable = false, length = 255)
     private String password;
 
-//    @Column(name = "mainSkill", nullable = false)
-//    @Enumerated(EnumType.STRING)
-//    private BarberSkills mainSkill;
-//
-//    @Column(name = "secondSkill")
-//    @Enumerated(EnumType.STRING)
-//    private BarberSkills secondSkill;
-//
-//    @Column(name = "thirdSkill")
-//    @Enumerated(EnumType.STRING)
-//    private BarberSkills thirdSkill;
+    @Column(name = "is_owner", nullable = false)
+    private boolean isOwner = false;
 
-    @Column(name = "barberShop", nullable = false, length = 36)
-    private UUID barberShop;
+    // Relacionamento: N Barbeiros pertencem a 1 Barbearia
+    // É NULLABLE para permitir barbeiros "livres"
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "barbershop_id")
+    private Barbershop barbershop;
 
     @CreatedDate
-    @Column(name = "dateCreated", nullable = false, updatable = false)
+    @Column(name = "date_created", nullable = false, updatable = false)
     private OffsetDateTime dateCreated;
 
     @LastModifiedDate
-    @Column(name = "lastUpdated", nullable = false)
+    @Column(name = "last_updated", nullable = false)
     private OffsetDateTime lastUpdated;
+
+    // Relacionamento: 1 Barbeiro tem N Agendamentos
+    @OneToMany(mappedBy = "barber")
+    private Set<Appointments> appointments;
+
+    // Relacionamento: N Barbeiros realizam N Serviços
+    @ManyToMany
+    @JoinTable(
+            name = "barber_services",
+            joinColumns = @JoinColumn(name = "barber_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_id")
+    )
+    private Set<Service> services;
+
+    // Relacionamento: 1 Barbeiro tem N Pedidos para Entrar
+    @OneToMany(mappedBy = "barber")
+    private Set<BarbershopJoinRequest> joinRequests;
 }

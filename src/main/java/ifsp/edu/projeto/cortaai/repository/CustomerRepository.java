@@ -1,6 +1,7 @@
 package ifsp.edu.projeto.cortaai.repository;
 
 import ifsp.edu.projeto.cortaai.model.Customer;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,9 +12,10 @@ public interface CustomerRepository extends JpaRepository<Customer, UUID> {
 
     boolean existsByEmailIgnoreCase(String email);
 
+    // O JPA entende que documentCPF (camelCase) mapeia para document_cpf (snake_case)
+    // graças à anotação @Column na entidade.
     boolean existsByDocumentCPFIgnoreCase(String documentCPF);
 
-    boolean existsByPreviousAppointmentIgnoreCase(String previousAppointment);
-
-    Customer findByEmail(String email);
+    // Método findByEmail (sem "IgnoreCase") é usado pelo login.
+    Optional<Customer> findByEmail(String email);
 }
