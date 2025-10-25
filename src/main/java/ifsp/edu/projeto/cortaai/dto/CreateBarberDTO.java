@@ -34,6 +34,10 @@ public class CreateBarberDTO {
     private String documentCPF;
 
     @NotNull
+    @Size(max = 70) // ADICIONE ESTE CAMPO
+    private String password;
+
+    @NotNull
     private BarberSkills mainSkill;
 
     private BarberSkills secondSkill;

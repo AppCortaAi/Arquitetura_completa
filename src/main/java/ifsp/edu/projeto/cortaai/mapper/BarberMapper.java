@@ -48,6 +48,7 @@ public class BarberMapper {
         barber.setName(createBarberDTO.getName());
         barber.setTell(createBarberDTO.getTell());
         barber.setEmail(createBarberDTO.getEmail());
+        barber.setPassword(createBarberDTO.getPassword());
         barber.setDocumentCPF(createBarberDTO.getDocumentCPF());
         barber.setMainSkill(createBarberDTO.getMainSkill());
         barber.setSecondSkill(createBarberDTO.getSecondSkill());

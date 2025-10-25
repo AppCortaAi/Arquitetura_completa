@@ -12,6 +12,7 @@ import ifsp.edu.projeto.cortaai.service.BarberService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,14 +22,17 @@ public class BarberServiceImpl implements BarberService {
 
     private final BarberRepository barberRepository;
     private final ApplicationEventPublisher publisher;
-    private final BarberMapper barberMapper; // Injeta o Mapper
+    private final BarberMapper barberMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public BarberServiceImpl(final BarberRepository barberRepository,
                              final ApplicationEventPublisher publisher,
-                             final BarberMapper barberMapper) { // Adiciona no construtor
+                             final BarberMapper barberMapper,
+                             final PasswordEncoder passwordEncoder) { // Adiciona no construtor
         this.barberRepository = barberRepository;
         this.publisher = publisher;
         this.barberMapper = barberMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -71,6 +75,13 @@ public class BarberServiceImpl implements BarberService {
         barberRepository.delete(barber);
     }
 
+    @Override
+    public UUID create(CreateBarberDTO createBarberDTO) {
+        final Barber barber = barberMapper.toEntity(createBarberDTO);
+        // Criptografa a senha antes de salvar
+        barber.setPassword(passwordEncoder.encode(createBarberDTO.getPassword()));
+        return barberRepository.save(barber).getId();
+    }
 
     @Override
     public boolean tellExists(final String tell) {
@@ -85,11 +96,6 @@ public class BarberServiceImpl implements BarberService {
     @Override
     public boolean documentCPFExists(final String documentCPF) {
         return barberRepository.existsByDocumentCPFIgnoreCase(documentCPF);
-    }
-
-    @Override
-    public UUID create(CreateBarberDTO createBarberDTO) {
-        return null;
     }
 
     @Override

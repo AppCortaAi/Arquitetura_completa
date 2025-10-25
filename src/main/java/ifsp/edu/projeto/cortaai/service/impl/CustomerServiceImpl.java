@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ifsp.edu.projeto.cortaai.dto.LoginDTO;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,14 +22,17 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final ApplicationEventPublisher publisher;
-    private final CustomerMapper customerMapper; // Injeta o Mapper
+    private final CustomerMapper customerMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public CustomerServiceImpl(final CustomerRepository customerRepository,
                                final ApplicationEventPublisher publisher,
-                               final CustomerMapper customerMapper) { // Adiciona no construtor
+                               final CustomerMapper customerMapper,
+                               final PasswordEncoder passwordEncoder) { // Adiciona no construtor
         this.customerRepository = customerRepository;
         this.publisher = publisher;
         this.customerMapper = customerMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -46,21 +50,12 @@ public class CustomerServiceImpl implements CustomerService {
             throw new NotFoundException("Usuário não encontrado");
         }
 
-        // NOTA: No seu código, a senha não está sendo criptografada.
-        // O ideal é usar uma biblioteca como BCrypt para comparar as senhas.
-        // Por simplicidade, faremos uma comparação de texto plano, mas isso NÃO é seguro.
-        if (!customer.getPassword().equals(loginDTO.getPassword())) {
+        // 4. MUDAR A COMPARAÇÃO DE SENHA
+        if (!passwordEncoder.matches(loginDTO.getPassword(), customer.getPassword())) {
             throw new NotFoundException("Senha inválida");
         }
 
         return customerMapper.toDTO(customer);
-    }
-
-    @Override
-    public CustomerDTO get(final UUID id) {
-        return customerRepository.findById(id)
-                .map(customerMapper::toDTO) // Usa o mapper
-                .orElseThrow(NotFoundException::new);
     }
 
     @Override
@@ -70,9 +65,29 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setTell(customerCreateDTO.getTell());
         customer.setEmail(customerCreateDTO.getEmail());
         customer.setDocumentCPF(customerCreateDTO.getDocumentCPF());
-        customer.setPassword(customerCreateDTO.getPassword());
+
+        // 5. CODIFICAR A SENHA ANTES DE SALVAR
+        customer.setPassword(passwordEncoder.encode(customerCreateDTO.getPassword()));
         return customerRepository.save(customer).getId();
     }
+
+    @Override
+    public CustomerDTO get(final UUID id) {
+        return customerRepository.findById(id)
+                .map(customerMapper::toDTO) // Usa o mapper
+                .orElseThrow(NotFoundException::new);
+    }
+
+//    @Override
+//    public UUID create(final CustomerCreateDTO customerCreateDTO) {
+//        final Customer customer = new Customer();
+//        customer.setName(customerCreateDTO.getName());
+//        customer.setTell(customerCreateDTO.getTell());
+//        customer.setEmail(customerCreateDTO.getEmail());
+//        customer.setDocumentCPF(customerCreateDTO.getDocumentCPF());
+//        customer.setPassword(customerCreateDTO.getPassword());
+//        return customerRepository.save(customer).getId();
+//    }
 
     @Override
     public void update(final UUID id, final CustomerDTO customerDTO) {
