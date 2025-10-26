@@ -17,7 +17,7 @@ public class CustomerMapper {
         customerDTO.setTell(customer.getTell());
         customerDTO.setEmail(customer.getEmail());
         customerDTO.setDocumentCPF(customer.getDocumentCPF());
-        customerDTO.setPassword(customer.getPassword());
+        // REMOVIDO: customerDTO.setPassword(customer.getPassword());
         return customerDTO;
     }
 
@@ -30,7 +30,7 @@ public class CustomerMapper {
         customer.setTell(customerDTO.getTell());
         customer.setEmail(customerDTO.getEmail());
         customer.setDocumentCPF(customerDTO.getDocumentCPF());
-        customer.setPassword(customerDTO.getPassword());
+        // REMOVIDO: customer.setPassword(customerDTO.getPassword());
         return customer;
     }
 }

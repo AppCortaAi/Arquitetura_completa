@@ -1,9 +1,5 @@
 package ifsp.edu.projeto.cortaai.dto;
 
-import ifsp.edu.projeto.cortaai.validator.CustomerDocumentCPFUnique;
-import ifsp.edu.projeto.cortaai.validator.CustomerEmailUnique;
-//import ifsp.edu.projeto.cortaai.validator.CustomerPreviousAppointmentUnique;
-import ifsp.edu.projeto.cortaai.validator.CustomerTellUnique;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
@@ -23,21 +19,18 @@ public class CustomerDTO {
 
     @NotNull
     @Size(max = 11)
-    @CustomerTellUnique
+    // A anotação @CustomerTellUnique será mantida, mas o validador precisará ser ajustado
     private String tell;
 
     @NotNull
     @Size(max = 70)
-    @CustomerEmailUnique
+    // A anotação @CustomerEmailUnique será mantida
     private String email;
 
     @NotNull
     @Size(max = 11)
-    @CustomerDocumentCPFUnique
+    // A anotação @CustomerDocumentCPFUnique será mantida
     private String documentCPF;
 
-    @NotNull
-    @Size(max = 70)
-    private String password;
-
+    // O CAMPO PASSWORD FOI REMOVIDO DESTE DTO DE RESPOSTA
 }

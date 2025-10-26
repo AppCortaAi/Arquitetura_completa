@@ -59,9 +59,9 @@ public class Appointments {
     // Relacionamento: N Agendamentos contêm N Serviços
     @ManyToMany
     @JoinTable(
-            name = "appointment_services",
+            name = "appointment_activities",
             joinColumns = @JoinColumn(name = "appointment_id"),
-            inverseJoinColumns = @JoinColumn(name = "service_id")
+            inverseJoinColumns = @JoinColumn(name = "activity_id")
     )
-    private Set<Service> services;
+    private Set<Activity> activities;
 }

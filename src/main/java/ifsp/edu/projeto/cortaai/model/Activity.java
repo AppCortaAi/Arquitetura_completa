@@ -14,11 +14,11 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "services")
+@Table(name = "activities")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-public class Service {
+public class Activity {
 
     @Id
     @Column(nullable = false, updatable = false, length = 36)
@@ -30,8 +30,8 @@ public class Service {
     @JoinColumn(name = "barbershop_id", nullable = false)
     private Barbershop barbershop;
 
-    @Column(name = "service_name", nullable = false, length = 255)
-    private String serviceName;
+    @Column(name = "activity_name", nullable = false, length = 255)
+    private String activityName;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
@@ -48,10 +48,10 @@ public class Service {
     private OffsetDateTime lastUpdated;
 
     // Relacionamento: N Serviços são realizados por N Barbeiros
-    @ManyToMany(mappedBy = "services")
+    @ManyToMany(mappedBy = "activities")
     private Set<Barber> barbers;
 
     // Relacionamento: N Serviços estão em N Agendamentos
-    @ManyToMany(mappedBy = "services")
+    @ManyToMany(mappedBy = "activities")
     private Set<Appointments> appointments;
 }

@@ -48,7 +48,7 @@ public class Barbershop {
 
     // Relacionamento: 1 Barbearia tem N Serviços
     @OneToMany(mappedBy = "barbershop")
-    private Set<Service> services;
+    private Set<Activity> activities;
 
     // Relacionamento: 1 Barbearia tem N Agendamentos
     @OneToMany(mappedBy = "barbershop")

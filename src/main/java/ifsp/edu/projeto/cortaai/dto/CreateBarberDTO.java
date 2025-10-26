@@ -1,12 +1,10 @@
 package ifsp.edu.projeto.cortaai.dto;
 
-import ifsp.edu.projeto.cortaai.model.enums.BarberSkills;
 import ifsp.edu.projeto.cortaai.validator.BarberDocumentCPFUnique;
 import ifsp.edu.projeto.cortaai.validator.BarberEmailUnique;
 import ifsp.edu.projeto.cortaai.validator.BarberTellUnique;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -34,16 +32,6 @@ public class CreateBarberDTO {
     private String documentCPF;
 
     @NotNull
-    @Size(max = 70) // ADICIONE ESTE CAMPO
+    @Size(min = 6, max = 255) // Adicionando validação de senha
     private String password;
-
-    @NotNull
-    private BarberSkills mainSkill;
-
-    private BarberSkills secondSkill;
-
-    private BarberSkills thirdSkill;
-
-    @NotNull
-    private UUID barberShop;
 }

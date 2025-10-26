@@ -1,7 +1,7 @@
 package ifsp.edu.projeto.cortaai.controller;
 
 import ifsp.edu.projeto.cortaai.dto.BarberDTO;
-import ifsp.edu.projeto.cortaai.dto.CustomerDTO;
+import ifsp.edu.projeto.cortaai.dto.CreateBarberDTO;
 import ifsp.edu.projeto.cortaai.service.BarberService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
@@ -11,21 +11,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ifsp.edu.projeto.cortaai.dto.CreateBarberDTO;
 
 @RestController
 @RequestMapping(value = "/api/barbers", produces = MediaType.APPLICATION_JSON_VALUE)
 public class BarberController {
 
-    private final BarberService barberService; // Use a interface
+    private final BarberService barberService;
 
     public BarberController(final BarberService barberService) {
         this.barberService = barberService;
-    }
-
-    @GetMapping("/{id}/customers")
-    public ResponseEntity<List<CustomerDTO>> getCustomerHistory(@PathVariable(name = "id") final UUID id) {
-        return ResponseEntity.ok(barberService.findCustomerHistory(id));
     }
 
     @GetMapping
@@ -38,17 +32,17 @@ public class BarberController {
         return ResponseEntity.ok(barberService.get(id));
     }
 
-    @PostMapping("/create")
+    // Endpoint alterado para refletir o registro na plataforma
+    @PostMapping("/register")
     @ApiResponse(responseCode = "201")
     public ResponseEntity<UUID> createBarber(@RequestBody @Valid final CreateBarberDTO createBarberDTO) {
         final UUID createdId = barberService.create(createBarberDTO);
         return new ResponseEntity<>(createdId, HttpStatus.CREATED);
     }
 
-
     @PutMapping("/{id}")
     public ResponseEntity<UUID> updateBarber(@PathVariable(name = "id") final UUID id,
-                                             @RequestBody @Valid final BarberDTO barberDTO) {
+                                             @RequestBody @Valid final BarberDTO barberDTO) { // Usa o novo BarberDTO
         barberService.update(id, barberDTO);
         return ResponseEntity.ok(id);
     }

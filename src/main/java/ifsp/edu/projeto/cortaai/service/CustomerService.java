@@ -2,7 +2,7 @@ package ifsp.edu.projeto.cortaai.service;
 
 import ifsp.edu.projeto.cortaai.dto.CustomerCreateDTO;
 import ifsp.edu.projeto.cortaai.dto.CustomerDTO;
-import ifsp.edu.projeto.cortaai.dto.LoginDTO; // Importe o LoginDTO
+import ifsp.edu.projeto.cortaai.dto.LoginDTO;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,13 +18,14 @@ public interface CustomerService {
 
     void delete(UUID id);
 
+    CustomerDTO login(LoginDTO loginDTO); // Assinatura mantida
+
+    // --- Métodos de validação ---
     boolean tellExists(String tell);
 
     boolean emailExists(String email);
 
     boolean documentCPFExists(String documentCPF);
 
-    boolean previousAppointmentExists(String previousAppointment);
-
-    CustomerDTO login(LoginDTO loginDTO); // Adicione esta linha
+    // O método previousAppointmentExists foi removido
 }

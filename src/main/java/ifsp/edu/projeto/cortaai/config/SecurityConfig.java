@@ -25,22 +25,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         // Permite acesso não autenticado aos seguintes endpoints:
                         .requestMatchers(
-                                // Endpoints da documentação (Swagger)
-                                "/",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-
                                 // Endpoints públicos da nossa API (criação e login)
-                                "/api/customers/create",
+                                "/api/customers/register",
                                 "/api/customers/login",
-                                "/api/barbers/create"
-
+                                "/api/barbers/register",
+                                "/api/barbers/login"
                         ).permitAll()
 
-                        // Exige autenticação para qualquer outra requisição
+                        // Exige autenticação para qualquer outra requisição (incluindo Swagger)
                         .anyRequest().authenticated()
-                );
-
+                )
+                // Habilita um formulário de login padrão para autenticação via navegador,
+                // que será usado para acessar endpoints protegidos como o Swagger.
+                .formLogin(withDefaults());
         return http.build();
     }
 }

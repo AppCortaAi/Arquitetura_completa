@@ -63,11 +63,11 @@ public class Barber {
     // Relacionamento: N Barbeiros realizam N Serviços
     @ManyToMany
     @JoinTable(
-            name = "barber_services",
+            name = "barber_activities",
             joinColumns = @JoinColumn(name = "barber_id"),
-            inverseJoinColumns = @JoinColumn(name = "service_id")
+            inverseJoinColumns = @JoinColumn(name = "activity_id")
     )
-    private Set<Service> services;
+    private Set<Activity> activities;
 
     // Relacionamento: 1 Barbeiro tem N Pedidos para Entrar
     @OneToMany(mappedBy = "barber")

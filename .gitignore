@@ -34,3 +34,6 @@ application-local.yml
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
+
+## App
+.env

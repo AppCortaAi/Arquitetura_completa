@@ -3,7 +3,7 @@ package ifsp.edu.projeto.cortaai.mapper;
 import ifsp.edu.projeto.cortaai.dto.BarberDTO;
 import ifsp.edu.projeto.cortaai.model.Barber;
 import org.springframework.stereotype.Component;
-import ifsp.edu.projeto.cortaai.dto.CreateBarberDTO;
+// O import do CreateBarberDTO foi removido
 
 @Component
 public class BarberMapper {
@@ -18,10 +18,13 @@ public class BarberMapper {
         barberDTO.setTell(barber.getTell());
         barberDTO.setEmail(barber.getEmail());
         barberDTO.setDocumentCPF(barber.getDocumentCPF());
-        barberDTO.setMainSkill(barber.getMainSkill());
-        barberDTO.setSecondSkill(barber.getSecondSkill());
-        barberDTO.setThirdSkill(barber.getThirdSkill());
-        barberDTO.setBarberShop(barber.getBarberShop());
+        barberDTO.setOwner(barber.isOwner());
+
+        // Mapeia o objeto Barbershop para apenas seu ID
+        if (barber.getBarbershop() != null) {
+            barberDTO.setBarbershopId(barber.getBarbershop().getId());
+        }
+
         return barberDTO;
     }
 
@@ -30,30 +33,18 @@ public class BarberMapper {
             return null;
         }
         Barber barber = new Barber();
+        // ID não é mapeado do DTO
         barber.setName(barberDTO.getName());
         barber.setTell(barberDTO.getTell());
         barber.setEmail(barberDTO.getEmail());
         barber.setDocumentCPF(barberDTO.getDocumentCPF());
-        barber.setMainSkill(barberDTO.getMainSkill());
-        barber.setSecondSkill(barberDTO.getSecondSkill());
-        barber.setThirdSkill(barberDTO.getThirdSkill());
-        barber.setBarberShop(barberDTO.getBarberShop());
+        barber.setOwner(barberDTO.isOwner());
+
+        // O vínculo da Barbershop (barbershopId) é tratado no Service, não aqui.
+
         return barber;
     }
-    public Barber toEntity(CreateBarberDTO createBarberDTO) {
-        if (createBarberDTO == null) {
-            return null;
-        }
-        Barber barber = new Barber();
-        barber.setName(createBarberDTO.getName());
-        barber.setTell(createBarberDTO.getTell());
-        barber.setEmail(createBarberDTO.getEmail());
-        barber.setPassword(createBarberDTO.getPassword());
-        barber.setDocumentCPF(createBarberDTO.getDocumentCPF());
-        barber.setMainSkill(createBarberDTO.getMainSkill());
-        barber.setSecondSkill(createBarberDTO.getSecondSkill());
-        barber.setThirdSkill(createBarberDTO.getThirdSkill());
-        barber.setBarberShop(createBarberDTO.getBarberShop());
-        return barber;
-    }
+
+    // O método toEntity(CreateBarberDTO) foi removido pois a lógica
+    // de criação (com criptografia de senha) está no BarberServiceImpl.
 }

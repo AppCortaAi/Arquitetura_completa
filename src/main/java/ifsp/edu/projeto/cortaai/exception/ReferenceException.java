@@ -16,6 +16,14 @@ public class ReferenceException extends RuntimeException {
     private String key = null;
     private ArrayList<Object> params = new ArrayList<>();
 
+    public ReferenceException() {
+        // Construtor vazio para permitir a instanciação e configuração posterior.
+    }
+
+    public ReferenceException(String key) {
+        this.key = key;
+    }
+
     public void addParam(final Object param) {
         params.add(param);
     }

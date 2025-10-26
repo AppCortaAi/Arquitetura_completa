@@ -33,7 +33,7 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.get(id));
     }
 
-    @PostMapping("/create")
+    @PostMapping("/register")
     @ApiResponse(responseCode = "201")
     public ResponseEntity<UUID> createCustomer(@RequestBody @Valid final CustomerCreateDTO customerCreateDTO) {
         final UUID createdId = customerService.create(customerCreateDTO);
@@ -49,7 +49,7 @@ public class CustomerController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UUID> updateCustomer(@PathVariable(name = "id") final UUID id,
-            @RequestBody @Valid final CustomerDTO customerDTO) {
+                                               @RequestBody @Valid final CustomerDTO customerDTO) {
         customerService.update(id, customerDTO);
         return ResponseEntity.ok(id);
     }
