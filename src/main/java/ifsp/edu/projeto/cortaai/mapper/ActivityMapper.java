@@ -17,6 +17,7 @@ public class ActivityMapper {
         dto.setActivityName(service.getActivityName());
         dto.setPrice(service.getPrice());
         dto.setDurationMinutes(service.getDurationMinutes());
+        dto.setImageUrl(service.getImageUrl()); // LINHA ADICIONADA
         if (service.getBarbershop() != null) {
             dto.setBarbershopId(service.getBarbershop().getId());
         }
@@ -31,7 +32,7 @@ public class ActivityMapper {
         service.setActivityName(dto.getActivityName());
         service.setPrice(dto.getPrice());
         service.setDurationMinutes(dto.getDurationMinutes());
-        // O vínculo com a Barbershop é feito no Service
+        // A imagem (imageUrl) não é definida na criação, mas em um endpoint de upload
         return service;
     }
 }

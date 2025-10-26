@@ -3,7 +3,6 @@ package ifsp.edu.projeto.cortaai.mapper;
 import ifsp.edu.projeto.cortaai.dto.BarberDTO;
 import ifsp.edu.projeto.cortaai.model.Barber;
 import org.springframework.stereotype.Component;
-// O import do CreateBarberDTO foi removido
 
 @Component
 public class BarberMapper {
@@ -21,6 +20,7 @@ public class BarberMapper {
         barberDTO.setOwner(barber.isOwner());
         barberDTO.setWorkStartTime(barber.getWorkStartTime());
         barberDTO.setWorkEndTime(barber.getWorkEndTime());
+        barberDTO.setImageUrl(barber.getImageUrl()); // LINHA ADICIONADA
 
 
         // Mapeia o objeto Barbershop para apenas seu ID
@@ -42,12 +42,10 @@ public class BarberMapper {
         barber.setEmail(barberDTO.getEmail());
         barber.setDocumentCPF(barberDTO.getDocumentCPF());
         barber.setOwner(barberDTO.isOwner());
+        barber.setImageUrl(barberDTO.getImageUrl()); // LINHA ADICIONADA
 
         // O vínculo da Barbershop (barbershopId) é tratado no Service, não aqui.
 
         return barber;
     }
-
-    // O método toEntity(CreateBarberDTO) foi removido pois a lógica
-    // de criação (com criptografia de senha) está no BarberServiceImpl.
 }

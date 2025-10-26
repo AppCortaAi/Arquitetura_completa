@@ -10,7 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ifsp.edu.projeto.cortaai.dto.JoinRequestDTO;
 import ifsp.edu.projeto.cortaai.dto.UpdateBarbershopDTO;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -121,6 +123,66 @@ public class BarbershopController {
     public ResponseEntity<Void> freeBarber(
             @PathVariable(name = "barberId") final UUID barberId) {
         barberService.freeBarber(barberId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- Fluxo 4: Gestao de imagens ---
+    @PostMapping("/barbers/{ownerId}/barbershops/upload-logo")
+    public ResponseEntity<String> uploadBarbershopLogo(
+            @PathVariable(name = "ownerId") final UUID ownerId,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = barberService.updateBarbershopLogo(ownerId, file);
+            return ResponseEntity.ok(imageUrl);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/barbers/{ownerId}/barbershops/upload-banner")
+    public ResponseEntity<String> uploadBarbershopBanner(
+            @PathVariable(name = "ownerId") final UUID ownerId,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = barberService.updateBarbershopBanner(ownerId, file);
+            return ResponseEntity.ok(imageUrl);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/barbers/{ownerId}/activities/{activityId}/upload-photo")
+    public ResponseEntity<String> uploadActivityPhoto(
+            @PathVariable(name = "ownerId") final UUID ownerId,
+            @PathVariable(name = "activityId") final UUID activityId,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = barberService.updateActivityPhoto(ownerId, activityId, file);
+            return ResponseEntity.ok(imageUrl);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/barbers/{ownerId}/barbershops/highlights")
+    public ResponseEntity<String> addBarbershopHighlight(
+            @PathVariable(name = "ownerId") final UUID ownerId,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = barberService.addBarbershopHighlight(ownerId, file);
+            return ResponseEntity.status(HttpStatus.CREATED).body(imageUrl);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/barbers/{ownerId}/barbershops/highlights/{highlightId}")
+    @ApiResponse(responseCode = "204")
+    public ResponseEntity<Void> deleteBarbershopHighlight(
+            @PathVariable(name = "ownerId") final UUID ownerId,
+            @PathVariable(name = "highlightId") final UUID highlightId) {
+
+        barberService.deleteBarbershopHighlight(ownerId, highlightId);
         return ResponseEntity.noContent().build();
     }
 }

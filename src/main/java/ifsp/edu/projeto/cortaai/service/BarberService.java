@@ -4,7 +4,9 @@ import ifsp.edu.projeto.cortaai.dto.*;
 import jakarta.validation.Valid;
 import ifsp.edu.projeto.cortaai.dto.JoinRequestDTO;
 import ifsp.edu.projeto.cortaai.dto.UpdateBarbershopDTO;
+import org.springframework.web.multipart.MultipartFile; // IMPORT ADICIONADO
 
+import java.io.IOException; // IMPORT ADICIONADO
 import java.util.List;
 import java.util.UUID;
 
@@ -13,19 +15,20 @@ public interface BarberService {
     // --- Gestão de Barbeiros (Global) ---
     List<BarberDTO> findAll();
     BarberDTO get(UUID id);
-    UUID create(@Valid CreateBarberDTO createBarberDTO); // Registra barbeiro na plataforma
-    void update(UUID id, BarberDTO barberDTO); // Atualiza dados do barbeiro
+    UUID create(@Valid CreateBarberDTO createBarberDTO);
+    void update(UUID id, BarberDTO barberDTO);
     void delete(UUID id);
+    BarberDTO login(LoginDTO loginDTO);
 
     // --- Gestão de Barbearias (Fluxo 1) ---
     BarbershopDTO createBarbershop(UUID ownerBarberId, @Valid CreateBarbershopDTO createBarbershopDTO);
     BarbershopDTO updateBarbershop(UUID ownerId, UpdateBarbershopDTO updateBarbershopDTO);
     BarbershopDTO getBarbershop(UUID barbershopId);
-    List<BarbershopDTO> listBarbershops(); // Para o "mosaico" de lojas
+    List<BarbershopDTO> listBarbershops();
 
     // --- Gestão de Serviços (Fluxo 1) ---
     ActivityDTO createActivities(UUID ownerBarberId, @Valid CreateActivityDTO createActivityDTO);
-    List<ActivityDTO> listActivities(UUID barbershopId); // Lista serviços da loja
+    List<ActivityDTO> listActivities(UUID barbershopId);
     List<BarberDTO> listBarbersByBarbershop(UUID barbershopId);
 
     // --- Gestão de Vínculos (Fluxos 2 e 3) ---
@@ -44,5 +47,11 @@ public interface BarberService {
     boolean emailExists(String email);
     boolean documentCPFExists(String documentCPF);
 
-    BarberDTO login(LoginDTO loginDTO);
+    // --- NOVOS MÉTODOS DE UPLOAD DE IMAGEM ---
+    String updateBarberProfilePhoto(UUID barberId, MultipartFile file) throws IOException;
+    String updateActivityPhoto(UUID ownerId, UUID activityId, MultipartFile file) throws IOException;
+    String updateBarbershopLogo(UUID ownerId, MultipartFile file) throws IOException;
+    String updateBarbershopBanner(UUID ownerId, MultipartFile file) throws IOException;
+    String addBarbershopHighlight(UUID ownerId, MultipartFile file) throws IOException;
+    void deleteBarbershopHighlight(UUID ownerId, UUID highlightId);
 }

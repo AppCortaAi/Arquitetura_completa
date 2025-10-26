@@ -54,4 +54,7 @@ public class Activity {
     // Relacionamento: N Serviços estão em N Agendamentos
     @ManyToMany(mappedBy = "activities")
     private Set<Appointments> appointments;
+
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
 }

@@ -22,5 +22,7 @@ public class CreateActivityDTO {
     @Positive
     private Integer durationMinutes;
 
+    private String imageUrl;
+
     // O barbershopId virá do usuário (Owner) autenticado
 }

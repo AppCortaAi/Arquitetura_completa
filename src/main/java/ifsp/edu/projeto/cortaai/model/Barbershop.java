@@ -57,4 +57,13 @@ public class Barbershop {
     // Relacionamento: 1 Barbearia tem N Pedidos para Entrar
     @OneToMany(mappedBy = "barbershop")
     private Set<BarbershopJoinRequest> joinRequests;
+
+    @Column(name = "logo_url", length = 255)
+    private String logoUrl;
+
+    @Column(name = "banner_url", length = 255)
+    private String bannerUrl;
+
+    @OneToMany(mappedBy = "barbershop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<BarbershopHighlight> highlights;
 }

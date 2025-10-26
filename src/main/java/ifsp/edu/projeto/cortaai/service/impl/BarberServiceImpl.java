@@ -11,12 +11,15 @@ import ifsp.edu.projeto.cortaai.model.*;
 import ifsp.edu.projeto.cortaai.model.enums.JoinRequestStatus;
 import ifsp.edu.projeto.cortaai.repository.*;
 import ifsp.edu.projeto.cortaai.service.BarberService;
+import ifsp.edu.projeto.cortaai.service.StorageService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +37,11 @@ public class BarberServiceImpl implements BarberService {
     private final BarberMapper barberMapper;
     private final PasswordEncoder passwordEncoder;
     private final BarbershopMapper barbershopMapper;
-    private final ActivityMapper activityMapper; // Dependência do Mapper de Atividades
+    private final ActivityMapper activityMapper;
+
+    // DEPENDÊNCIAS ADICIONADAS
+    private final StorageService storageService;
+    private final BarbershopHighlightRepository barbershopHighlightRepository;
 
     public BarberServiceImpl(final BarberRepository barberRepository,
                              final BarbershopRepository barbershopRepository,
@@ -44,7 +51,9 @@ public class BarberServiceImpl implements BarberService {
                              final BarberMapper barberMapper,
                              final PasswordEncoder passwordEncoder,
                              final BarbershopMapper barbershopMapper,
-                             final ActivityMapper activityMapper) { // Adicionado ao construtor
+                             final ActivityMapper activityMapper,
+                             final StorageService storageService, // ADICIONADO AO CONSTRUTOR
+                             final BarbershopHighlightRepository barbershopHighlightRepository) { // ADICIONADO AO CONSTRUTOR
         this.barberRepository = barberRepository;
         this.barbershopRepository = barbershopRepository;
         this.joinRequestRepository = joinRequestRepository;
@@ -53,7 +62,9 @@ public class BarberServiceImpl implements BarberService {
         this.barberMapper = barberMapper;
         this.passwordEncoder = passwordEncoder;
         this.barbershopMapper = barbershopMapper;
-        this.activityMapper = activityMapper; // Injeção de dependência
+        this.activityMapper = activityMapper;
+        this.storageService = storageService; // INJETADO
+        this.barbershopHighlightRepository = barbershopHighlightRepository; // INJETADO
     }
 
     // --- Gestão de Barbeiros (Global) ---
@@ -426,5 +437,108 @@ public class BarberServiceImpl implements BarberService {
     @Override
     public boolean documentCPFExists(final String documentCPF) {
         return barberRepository.existsByDocumentCPFIgnoreCase(documentCPF);
+    }
+
+    @Override
+    @Transactional
+    public String updateBarberProfilePhoto(UUID barberId, MultipartFile file) throws IOException {
+        final Barber barber = barberRepository.findById(barberId)
+                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
+
+        final String imageUrl = storageService.uploadFile(file, "barber-profiles");
+
+        barber.setImageUrl(imageUrl);
+        barberRepository.save(barber);
+        return imageUrl;
+    }
+
+    @Override
+    @Transactional
+    public String updateActivityPhoto(UUID ownerId, UUID activityId, MultipartFile file) throws IOException {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
+
+        final Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new NotFoundException("Serviço (Activity) não encontrado"));
+
+        if (!activity.getBarbershop().getId().equals(barbershop.getId())) {
+            throw new ReferenceException("Este serviço não pertence à sua barbearia.");
+        }
+
+        final String imageUrl = storageService.uploadFile(file, "activity-images");
+
+        activity.setImageUrl(imageUrl);
+        activityRepository.save(activity);
+        return imageUrl;
+    }
+
+    @Override
+    @Transactional
+    public String updateBarbershopLogo(UUID ownerId, MultipartFile file) throws IOException {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
+        final String imageUrl = storageService.uploadFile(file, "barbershop-logos");
+
+        barbershop.setLogoUrl(imageUrl);
+        barbershopRepository.save(barbershop);
+        return imageUrl;
+    }
+
+    @Override
+    @Transactional
+    public String updateBarbershopBanner(UUID ownerId, MultipartFile file) throws IOException {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
+        final String imageUrl = storageService.uploadFile(file, "barbershop-banners");
+
+        barbershop.setBannerUrl(imageUrl);
+        barbershopRepository.save(barbershop);
+        return imageUrl;
+    }
+
+    @Override
+    @Transactional
+    public String addBarbershopHighlight(UUID ownerId, MultipartFile file) throws IOException {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
+        final String imageUrl = storageService.uploadFile(file, "barbershop-highlights");
+
+        BarbershopHighlight highlight = new BarbershopHighlight();
+        highlight.setBarbershop(barbershop);
+        highlight.setImageUrl(imageUrl);
+
+        barbershopHighlightRepository.save(highlight);
+        return imageUrl;
+    }
+
+    @Override
+    @Transactional
+    public void deleteBarbershopHighlight(UUID ownerId, UUID highlightId) {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
+
+        final BarbershopHighlight highlight = barbershopHighlightRepository.findById(highlightId)
+                .orElseThrow(() -> new NotFoundException("Imagem de destaque não encontrada"));
+
+        if (!highlight.getBarbershop().getId().equals(barbershop.getId())) {
+            throw new ReferenceException("Esta imagem não pertence à sua barbearia.");
+        }
+
+        // NOTA: Idealmente, você também deve deletar a imagem do Cloudinary aqui.
+        // Isso requer uma lógica mais complexa no seu StorageService.
+
+        barbershopHighlightRepository.delete(highlight);
+    }
+
+
+    // --- NOVO MÉTODO DE APOIO ---
+
+    /**
+     * Valida se o ID pertence a um dono e retorna a barbearia dele.
+     */
+    private Barbershop getBarbershopFromOwner(UUID ownerId) {
+        final Barber owner = barberRepository.findById(ownerId)
+                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+
+        if (!owner.isOwner() || owner.getBarbershop() == null) {
+            throw new ReferenceException("Apenas o dono de uma barbearia pode realizar esta ação.");
+        }
+
+        return owner.getBarbershop();
     }
 }

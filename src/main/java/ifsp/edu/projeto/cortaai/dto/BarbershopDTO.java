@@ -1,5 +1,6 @@
 package ifsp.edu.projeto.cortaai.dto;
 
+import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,5 +13,8 @@ public class BarbershopDTO {
     private String name;
     private String cnpj;
     private String address;
+    private String logoUrl;
+    private String bannerUrl;
+    private List<String> highlightUrls;
 
 }

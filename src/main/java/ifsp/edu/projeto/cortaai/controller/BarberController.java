@@ -7,6 +7,8 @@ import ifsp.edu.projeto.cortaai.dto.LoginDTO;
 import ifsp.edu.projeto.cortaai.service.BarberService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.*;import ifsp.edu.projeto.cortaai.dto.BarberWorkHoursDTO;
+import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -70,6 +73,19 @@ public class BarberController {
     public ResponseEntity<Void> deleteBarber(@PathVariable(name = "id") final UUID id) {
         barberService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // --- NOVO ENDPOINT DE UPLOAD ---
+    @PostMapping("/{id}/upload-photo")
+    public ResponseEntity<String> uploadBarberPhoto(
+            @PathVariable(name = "id") final UUID id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = barberService.updateBarberProfilePhoto(id, file);
+            return ResponseEntity.ok(imageUrl);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
+        }
     }
 
 }

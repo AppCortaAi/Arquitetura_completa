@@ -40,6 +40,5 @@ public class BarberDTO {
     // ID da barbearia à qual ele está vinculado (pode ser nulo)
     private UUID barbershopId;
 
-    // As skills (serviços) podem ser expostas em um endpoint separado
-    // ou como uma lista de ServiceDTO aqui, se necessário.
+    private String imageUrl;
 }

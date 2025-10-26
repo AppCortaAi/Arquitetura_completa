@@ -32,5 +32,5 @@ public class CustomerDTO {
     // A anotação @CustomerDocumentCPFUnique será mantida
     private String documentCPF;
 
-    // O CAMPO PASSWORD FOI REMOVIDO DESTE DTO DE RESPOSTA
+    private String imageUrl;
 }

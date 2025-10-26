@@ -5,6 +5,8 @@ import ifsp.edu.projeto.cortaai.service.CustomerService;
 import ifsp.edu.projeto.cortaai.dto.CustomerCreateDTO;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ifsp.edu.projeto.cortaai.dto.LoginDTO;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping(value = "/api/customers", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -59,6 +62,19 @@ public class CustomerController {
     public ResponseEntity<Void> deleteCustomer(@PathVariable(name = "id") final UUID id) {
         customerService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // --- NOVO ENDPOINT DE UPLOAD ---
+    @PostMapping("/{id}/upload-photo")
+    public ResponseEntity<String> uploadCustomerPhoto(
+            @PathVariable(name = "id") final UUID id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String imageUrl = customerService.updateProfilePhoto(id, file);
+            return ResponseEntity.ok(imageUrl);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
+        }
     }
 
 }

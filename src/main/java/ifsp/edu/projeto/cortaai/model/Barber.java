@@ -79,4 +79,7 @@ public class Barber {
     // Relacionamento: 1 Barbeiro tem N Pedidos para Entrar
     @OneToMany(mappedBy = "barber")
     private Set<BarbershopJoinRequest> joinRequests;
+
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
 }

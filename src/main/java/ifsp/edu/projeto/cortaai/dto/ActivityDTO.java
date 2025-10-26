@@ -14,5 +14,6 @@ public class ActivityDTO {
     private BigDecimal price;
     private Integer durationMinutes;
     private UUID barbershopId;
+    private String imageUrl;
 
 }

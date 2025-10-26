@@ -9,12 +9,15 @@ import ifsp.edu.projeto.cortaai.mapper.CustomerMapper;
 import ifsp.edu.projeto.cortaai.model.Customer;
 import ifsp.edu.projeto.cortaai.repository.CustomerRepository;
 import ifsp.edu.projeto.cortaai.service.CustomerService;
+import ifsp.edu.projeto.cortaai.service.StorageService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder; // IMPORTANTE
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,16 +27,19 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository customerRepository;
     private final ApplicationEventPublisher publisher;
     private final CustomerMapper customerMapper;
-    private final PasswordEncoder passwordEncoder; // IMPORTANTE
+    private final PasswordEncoder passwordEncoder;
+    private final StorageService storageService; // DEPENDÊNCIA ADICIONADA
 
     public CustomerServiceImpl(final CustomerRepository customerRepository,
                                final ApplicationEventPublisher publisher,
                                final CustomerMapper customerMapper,
-                               final PasswordEncoder passwordEncoder) { // IMPORTANTE
+                               final PasswordEncoder passwordEncoder,
+                               final StorageService storageService) { // ADICIONADO AO CONSTRUTOR
         this.customerRepository = customerRepository;
         this.publisher = publisher;
         this.customerMapper = customerMapper;
-        this.passwordEncoder = passwordEncoder; // IMPORTANTE
+        this.passwordEncoder = passwordEncoder;
+        this.storageService = storageService; // INJETADO
     }
 
     @Override
@@ -82,12 +88,16 @@ public class CustomerServiceImpl implements CustomerService {
         final Customer customer = customerRepository.findById(id)
                 .orElseThrow(NotFoundException::new);
 
-        // Mapeamento manual para evitar sobreescrever a senha
-        // O DTO não deve conter senha, e o mapper não deve ser usado aqui
         customer.setName(customerDTO.getName());
         customer.setTell(customerDTO.getTell());
         customer.setEmail(customerDTO.getEmail());
         customer.setDocumentCPF(customerDTO.getDocumentCPF());
+
+        // A imagem é atualizada por outro método (updateProfilePhoto)
+        // Mas se for enviado no DTO, podemos atualizar aqui também
+        if(customerDTO.getImageUrl() != null) {
+            customer.setImageUrl(customerDTO.getImageUrl());
+        }
 
         customerRepository.save(customer);
     }
@@ -117,5 +127,20 @@ public class CustomerServiceImpl implements CustomerService {
         return customerRepository.existsByDocumentCPFIgnoreCase(documentCPF);
     }
 
-    // Método previousAppointmentExists foi removido
+    @Override
+    @Transactional
+    public String updateProfilePhoto(UUID customerId, MultipartFile file) throws IOException {
+        // 1. Verifica se o cliente existe
+        final Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new NotFoundException("Cliente não encontrado"));
+
+        // 2. Faz o upload do arquivo para o Cloudinary na pasta "customer-profiles"
+        final String imageUrl = storageService.uploadFile(file, "customer-profiles");
+
+        // 3. Salva a URL no banco de dados
+        customer.setImageUrl(imageUrl);
+        customerRepository.save(customer);
+
+        return imageUrl;
+    }
 }

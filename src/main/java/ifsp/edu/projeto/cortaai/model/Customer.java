@@ -52,4 +52,7 @@ public class Customer {
     @OneToMany(mappedBy = "customer")
     private Set<Appointments> appointments;
 
+    @Column(name = "image_url", length = 255)
+    private String imageUrl;
+
 }
