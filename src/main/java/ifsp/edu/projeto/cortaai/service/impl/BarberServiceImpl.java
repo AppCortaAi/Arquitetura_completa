@@ -5,13 +5,10 @@ import ifsp.edu.projeto.cortaai.events.BeforeDeleteBarber;
 import ifsp.edu.projeto.cortaai.exception.NotFoundException;
 import ifsp.edu.projeto.cortaai.exception.ReferenceException; // Usado para regras de negócio
 import ifsp.edu.projeto.cortaai.mapper.BarberMapper;
-import ifsp.edu.projeto.cortaai.model.Barber;
-import ifsp.edu.projeto.cortaai.model.Barbershop;
-import ifsp.edu.projeto.cortaai.model.BarbershopJoinRequest;
+import ifsp.edu.projeto.cortaai.model.*;
 import ifsp.edu.projeto.cortaai.model.enums.JoinRequestStatus;
 import ifsp.edu.projeto.cortaai.repository.*;
 import ifsp.edu.projeto.cortaai.service.BarberService;
-import ifsp.edu.projeto.cortaai.model.Activity;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -62,6 +59,20 @@ public class BarberServiceImpl implements BarberService {
         return barberRepository.findAll(Sort.by("id")).stream()
                 .map(barberMapper::toDTO)
                 .toList();
+    }
+
+    @Override
+    @Transactional // Garante que a transação seja apenas de leitura
+    public BarberDTO login(final LoginDTO loginDTO) {
+        final Barber barber = barberRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new NotFoundException("Usuário ou senha inválidos"));
+
+        // Compara a senha enviada com o hash salvo no banco
+        if (!passwordEncoder.matches(loginDTO.getPassword(), barber.getPassword())) {
+            throw new NotFoundException("Usuário ou senha inválidos");
+        }
+
+        return barberMapper.toDTO(barber);
     }
 
     @Override
