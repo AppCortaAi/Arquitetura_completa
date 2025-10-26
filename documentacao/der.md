@@ -1,3 +1,6 @@
+# Diagrama Entidade-Relacionamento (DER)
+
+```mermaid
 erDiagram
     CUSTOMERS {
         varchar(36) id PK
@@ -45,34 +48,3 @@ erDiagram
         varchar(36) barber_id FK
         varchar(36) barbershop_id FK
     }
-
-    BARBERSHOP_JOIN_REQUESTS {
-        bigint id PK
-        varchar(50) status
-        varchar(36) barber_id FK
-        varchar(36) barbershop_id FK
-    }
-
-    BARBER_ACTIVITIES {
-        varchar(36) barber_id PK, FK
-        varchar(36) activity_id PK, FK
-    }
-
-    APPOINTMENT_ACTIVITIES {
-        bigint appointment_id PK, FK
-        varchar(36) activity_id PK, FK
-    }
-
-    CUSTOMERS ||--o{ APPOINTMENTS : "realiza"
-    BARBERS ||--o{ APPOINTMENTS : "atende"
-    BARBERSHOPS ||--o{ APPOINTMENTS : "ocorre em"
-    BARBERSHOPS ||--o{ BARBERS : "emprega"
-    BARBERSHOPS ||--o{ ACTIVITIES : "oferece"
-    BARBERSHOPS ||--o{ BARBERSHOP_JOIN_REQUESTS : "recebe"
-    BARBERS ||--o{ BARBERSHOP_JOIN_REQUESTS : "solicita"
-    
-    BARBERS }|--o{ BARBER_ACTIVITIES : "realiza"
-    ACTIVITIES }|--o{ BARBER_ACTIVITIES : "é realizada por"
-    
-    APPOINTMENTS }|--o{ APPOINTMENT_ACTIVITIES : "inclui"
-    ACTIVITIES }|--o{ APPOINTMENT_ACTIVITIES : "está em"
