@@ -36,4 +36,6 @@ public interface BarberService {
     boolean tellExists(String tell);
     boolean emailExists(String email);
     boolean documentCPFExists(String documentCPF);
+
+    BarberDTO login(LoginDTO loginDTO);
 }

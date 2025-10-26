@@ -2,6 +2,8 @@ package ifsp.edu.projeto.cortaai.controller;
 
 import ifsp.edu.projeto.cortaai.dto.BarberDTO;
 import ifsp.edu.projeto.cortaai.dto.CreateBarberDTO;
+import ifsp.edu.projeto.cortaai.dto.CustomerDTO;
+import ifsp.edu.projeto.cortaai.dto.LoginDTO;
 import ifsp.edu.projeto.cortaai.service.BarberService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
@@ -38,6 +40,11 @@ public class BarberController {
     public ResponseEntity<UUID> createBarber(@RequestBody @Valid final CreateBarberDTO createBarberDTO) {
         final UUID createdId = barberService.create(createBarberDTO);
         return new ResponseEntity<>(createdId, HttpStatus.CREATED);
+    }
+    @PostMapping("/login")
+    public ResponseEntity<BarberDTO> login(@RequestBody @Valid final LoginDTO loginDTO) {
+        final BarberDTO barber = barberService.login(loginDTO);
+        return ResponseEntity.ok(barber);
     }
 
     @PutMapping("/{id}")
