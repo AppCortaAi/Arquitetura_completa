@@ -17,6 +17,7 @@ import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,6 +42,39 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         this.barbershopRepository = barbershopRepository;
         this.activityRepository = activityRepository;
         this.appointmentMapper = appointmentMapper;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AppointmentsDTO> findForBarber(final UUID barberId) {
+        // Valida se o barbeiro existe
+        if (!barberRepository.existsById(barberId)) {
+            throw new NotFoundException("Barbeiro não encontrado");
+        }
+
+        // Busca os agendamentos e mapeia para DTO
+        return appointmentsRepository.findByBarberId(barberId).stream()
+                .map(appointmentMapper::toDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AppointmentsDTO> findForBarbershop(final UUID ownerId) {
+        // Valida se o requisitante é o dono
+        final Barber owner = barberRepository.findById(ownerId)
+                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+
+        if (!owner.isOwner() || owner.getBarbershop() == null) {
+            throw new ReferenceException("Apenas o dono de uma barbearia pode ver a agenda completa.");
+        }
+
+        final UUID barbershopId = owner.getBarbershop().getId();
+
+        // Busca os agendamentos e mapeia para DTO
+        return appointmentsRepository.findByBarbershopId(barbershopId).stream()
+                .map(appointmentMapper::toDTO)
+                .toList();
     }
 
     @Override

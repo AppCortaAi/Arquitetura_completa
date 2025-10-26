@@ -2,6 +2,8 @@ package ifsp.edu.projeto.cortaai.service;
 
 import ifsp.edu.projeto.cortaai.dto.*;
 import jakarta.validation.Valid;
+import ifsp.edu.projeto.cortaai.dto.JoinRequestDTO;
+import ifsp.edu.projeto.cortaai.dto.UpdateBarbershopDTO;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +19,7 @@ public interface BarberService {
 
     // --- Gestão de Barbearias (Fluxo 1) ---
     BarbershopDTO createBarbershop(UUID ownerBarberId, @Valid CreateBarbershopDTO createBarbershopDTO);
+    BarbershopDTO updateBarbershop(UUID ownerId, UpdateBarbershopDTO updateBarbershopDTO);
     BarbershopDTO getBarbershop(UUID barbershopId);
     List<BarbershopDTO> listBarbershops(); // Para o "mosaico" de lojas
 
@@ -28,6 +31,8 @@ public interface BarberService {
     void requestToJoinBarbershop(UUID barberId, String cnpj);
     void approveJoinRequest(UUID ownerBarberId, Long requestId);
     void freeBarber(UUID barberId);
+    void removeBarber(UUID ownerId, UUID barberIdToRemove);
+    List<JoinRequestDTO> getPendingJoinRequests(UUID ownerId);
 
     // --- Gestão de Habilidades (Fluxo 2) ---
     void assignActivities(UUID barberId, @Valid BarberActivityAssignDTO barberActivityAssignDTO);

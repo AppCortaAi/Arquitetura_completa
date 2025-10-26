@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ifsp.edu.projeto.cortaai.dto.JoinRequestDTO;
+import ifsp.edu.projeto.cortaai.dto.UpdateBarbershopDTO;
 
 import java.util.List;
 import java.util.UUID;
@@ -55,6 +57,23 @@ public class BarbershopController {
         return new ResponseEntity<>(createdService, HttpStatus.CREATED);
     }
 
+    @PutMapping("/barbers/{ownerId}/barbershops")
+    public ResponseEntity<BarbershopDTO> updateBarbershop(
+            @PathVariable(name = "ownerId") final UUID ownerId,
+            @RequestBody @Valid final UpdateBarbershopDTO updateBarbershopDTO) {
+        final BarbershopDTO updatedBarbershop = barberService.updateBarbershop(ownerId, updateBarbershopDTO);
+        return ResponseEntity.ok(updatedBarbershop);
+    }
+
+    @DeleteMapping("/barbers/{ownerId}/remove-barber/{barberId}")
+    @ApiResponse(responseCode = "204")
+    public ResponseEntity<Void> removeBarber(
+            @PathVariable(name = "ownerId") final UUID ownerId,
+            @PathVariable(name = "barberId") final UUID barberId) {
+        barberService.removeBarber(ownerId, barberId);
+        return ResponseEntity.noContent().build();
+    }
+
     // --- Fluxo 2: Gestão do Staff (Entrada e Habilidades) ---
 
     @PostMapping("/barbers/{barberId}/join-request")
@@ -64,6 +83,11 @@ public class BarbershopController {
             @RequestBody @Valid final BarberJoinRequestDTO joinRequestDTO) {
         barberService.requestToJoinBarbershop(barberId, joinRequestDTO.getCnpj());
         return ResponseEntity.accepted().build();
+    }
+
+    @GetMapping("/barbers/{ownerId}/pending-requests")
+    public ResponseEntity<List<JoinRequestDTO>> getPendingRequests(@PathVariable(name = "ownerId") final UUID ownerId) {
+        return ResponseEntity.ok(barberService.getPendingJoinRequests(ownerId));
     }
 
     @PostMapping("/barbers/{ownerId}/approve-request/{requestId}")

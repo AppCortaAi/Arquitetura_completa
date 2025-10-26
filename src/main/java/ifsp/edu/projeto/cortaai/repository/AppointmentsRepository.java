@@ -40,4 +40,10 @@ public interface AppointmentsRepository extends JpaRepository<Appointments, Long
      */
     @Query("SELECT a FROM Appointments a WHERE a.barber.id = ?1 AND " +"(a.startTime < ?3 AND a.endTime > ?2) AND " +"a.status <> 'CANCELLED'")
     List<Appointments> findConflictingAppointments(UUID barberId, OffsetDateTime newStartTime, OffsetDateTime newEndTime);
+
+    /**
+     * Encontra todos os agendamentos de uma barbearia.
+     * Útil para a visualização do Dono (Owner).
+     */
+    List<Appointments> findByBarbershopId(UUID barbershopId); // NOVO MÉTODO
 }

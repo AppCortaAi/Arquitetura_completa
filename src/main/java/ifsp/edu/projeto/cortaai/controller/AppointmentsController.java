@@ -6,6 +6,8 @@ import ifsp.edu.projeto.cortaai.service.AppointmentsService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,16 @@ public class AppointmentsController {
     public ResponseEntity<AppointmentsDTO> getAppointments(
             @PathVariable(name = "id") final Long id) {
         return ResponseEntity.ok(appointmentsService.get(id));
+    }
+
+    @GetMapping("/barbershop/{ownerId}")
+    public ResponseEntity<List<AppointmentsDTO>> getAppointmentsForBarbershop(@PathVariable(name = "ownerId") final UUID ownerId) {
+        return ResponseEntity.ok(appointmentsService.findForBarbershop(ownerId));
+    }
+
+    @GetMapping("/barber/{barberId}")
+    public ResponseEntity<List<AppointmentsDTO>> getAppointmentsForBarber(@PathVariable(name = "barberId") final UUID barberId) {
+        return ResponseEntity.ok(appointmentsService.findForBarber(barberId));
     }
 
     @PostMapping
