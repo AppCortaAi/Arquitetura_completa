@@ -10,6 +10,7 @@ import org.hibernate.annotations.UuidGenerator;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "barbers")
@@ -41,6 +42,12 @@ public class Barber {
 
     @Column(name = "is_owner", nullable = false)
     private boolean isOwner = false;
+
+    @Column(name = "work_start_time")
+    private LocalTime workStartTime;
+
+    @Column(name = "work_end_time")
+    private LocalTime workEndTime;
 
     // Relacionamento: N Barbeiros pertencem a 1 Barbearia
     // É NULLABLE para permitir barbeiros "livres"

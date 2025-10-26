@@ -19,6 +19,9 @@ public class BarberMapper {
         barberDTO.setEmail(barber.getEmail());
         barberDTO.setDocumentCPF(barber.getDocumentCPF());
         barberDTO.setOwner(barber.isOwner());
+        barberDTO.setWorkStartTime(barber.getWorkStartTime());
+        barberDTO.setWorkEndTime(barber.getWorkEndTime());
+
 
         // Mapeia o objeto Barbershop para apenas seu ID
         if (barber.getBarbershop() != null) {

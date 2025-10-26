@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.*;import ifsp.edu.projeto.cortaai.dto.BarberWorkHoursDTO;
+
 
 @RestController
 @RequestMapping(value = "/api/barbers", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,6 +54,15 @@ public class BarberController {
                                              @RequestBody @Valid final BarberDTO barberDTO) { // Usa o novo BarberDTO
         barberService.update(id, barberDTO);
         return ResponseEntity.ok(id);
+    }
+
+    @PutMapping("/{id}/work-hours")
+    @ApiResponse(responseCode = "204")
+    public ResponseEntity<Void> setBarberWorkHours(
+            @PathVariable(name = "id") final UUID id,
+            @RequestBody @Valid final BarberWorkHoursDTO workHoursDTO) {
+        barberService.setWorkHours(id, workHoursDTO);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

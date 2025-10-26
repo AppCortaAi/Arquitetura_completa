@@ -37,6 +37,12 @@ public class BarbershopController {
         return ResponseEntity.ok(barberService.listActivities(shopId));
     }
 
+    @GetMapping("/barbershops/{shopId}/barbers")
+    public ResponseEntity<List<BarberDTO>> listBarbersForBarbershop(
+            @PathVariable(name = "shopId") final UUID shopId) {
+        return ResponseEntity.ok(barberService.listBarbersByBarbershop(shopId));
+    }
+
     // --- Fluxo 1: Gestão do Dono (Owner) ---
 
     @PostMapping("/barbers/{ownerId}/barbershops/register") //get barbershop do owner id

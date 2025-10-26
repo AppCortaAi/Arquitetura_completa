@@ -2,6 +2,8 @@ package ifsp.edu.projeto.cortaai.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import java.time.LocalTime;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +14,9 @@ import lombok.Setter;
 public class BarberDTO {
 
     private UUID id;
+
+    private LocalTime workStartTime;
+    private LocalTime workEndTime;
 
     @NotNull
     @Size(max = 70)

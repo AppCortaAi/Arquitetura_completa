@@ -26,6 +26,7 @@ public interface BarberService {
     // --- Gestão de Serviços (Fluxo 1) ---
     ActivityDTO createActivities(UUID ownerBarberId, @Valid CreateActivityDTO createActivityDTO);
     List<ActivityDTO> listActivities(UUID barbershopId); // Lista serviços da loja
+    List<BarberDTO> listBarbersByBarbershop(UUID barbershopId);
 
     // --- Gestão de Vínculos (Fluxos 2 e 3) ---
     void requestToJoinBarbershop(UUID barberId, String cnpj);
@@ -36,6 +37,7 @@ public interface BarberService {
 
     // --- Gestão de Habilidades (Fluxo 2) ---
     void assignActivities(UUID barberId, @Valid BarberActivityAssignDTO barberActivityAssignDTO);
+    void setWorkHours(UUID barberId, BarberWorkHoursDTO workHoursDTO);
 
     // --- Métodos de validação ---
     boolean tellExists(String tell);

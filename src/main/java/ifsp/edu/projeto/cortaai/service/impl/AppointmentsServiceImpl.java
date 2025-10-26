@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -95,7 +96,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     @Override
     @Transactional
     public Long create(final AppointmentRequestDTO appointmentsDTO) {
-        // 1. Validar e buscar entidades
+        // 1. Validar e buscar entidades principais do banco de dados
         final Barbershop barbershop = barbershopRepository.findById(appointmentsDTO.getBarbershopId())
                 .orElseThrow(() -> new NotFoundException("Barbearia não encontrada"));
 
@@ -105,12 +106,12 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         final Barber barber = barberRepository.findById(appointmentsDTO.getBarberId())
                 .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
 
-        // 2. Validar se o barbeiro pertence à barbearia
+        // 2. Validar se o barbeiro pertence à barbearia informada
         if (barber.getBarbershop() == null || !barber.getBarbershop().getId().equals(barbershop.getId())) {
-            throw new ReferenceException();
+            throw new ReferenceException("O barbeiro selecionado não pertence a esta barbearia.");
         }
 
-        // 3. Validar serviços e calcular tempo
+        // 3. Validar os serviços (atividades) e calcular a duração total do agendamento
         final Set<Activity> activities = new HashSet<>(
                 activityRepository.findAllById(appointmentsDTO.getActivityIds())
         );
@@ -121,21 +122,33 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         int totalDuration = 0;
         for (Activity s : activities) {
-            // 3a. Valida se o serviço é da barbearia
+            // 3a. Valida se o serviço é oferecido pela barbearia
             if (!s.getBarbershop().getId().equals(barbershop.getId())) {
                 throw new ReferenceException("Serviço " + s.getActivityName() + " não pertence a esta barbearia.");
             }
-            // 3b. Valida se o barbeiro executa o serviço
+            // 3b. Valida se o barbeiro está habilitado a realizar o serviço
             if (!barber.getActivities().contains(s)) {
                 throw new ReferenceException("Barbeiro " + barber.getName() + " não executa o serviço " + s.getActivityName() + ".");
             }
             totalDuration += s.getDurationMinutes();
         }
 
-        // 4. Calcular horário e verificar conflitos
+        // 4. Calcular horário de término e verificar regras de negócio
         final OffsetDateTime startTime = appointmentsDTO.getStartTime();
         final OffsetDateTime endTime = startTime.plusMinutes(totalDuration);
 
+        // 4a. NOVA VALIDAÇÃO: Verifica se o agendamento está dentro do horário de trabalho do barbeiro
+        if (barber.getWorkStartTime() != null && barber.getWorkEndTime() != null) {
+            LocalTime appointmentStartTime = startTime.toLocalTime();
+            LocalTime appointmentEndTime = endTime.toLocalTime();
+
+            if (appointmentStartTime.isBefore(barber.getWorkStartTime()) || appointmentEndTime.isAfter(barber.getWorkEndTime())) {
+                throw new ReferenceException("O horário do agendamento está fora do expediente do barbeiro, que é das " +
+                        barber.getWorkStartTime() + " às " + barber.getWorkEndTime() + ".");
+            }
+        }
+
+        // 4b. Verifica se o horário solicitado conflita com outros agendamentos existentes
         List<Appointments> conflicts = appointmentsRepository.findConflictingAppointments(
                 barber.getId(), startTime, endTime
         );
@@ -144,7 +157,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             throw new ReferenceException("Horário indisponível. Já existe um agendamento neste bloco.");
         }
 
-        // 5. Criar e salvar
+        // 5. Se todas as validações passaram, cria e salva o novo agendamento
         final Appointments appointments = new Appointments();
         appointments.setBarbershop(barbershop);
         appointments.setBarber(barber);
@@ -163,19 +176,16 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         final Appointments appointments = appointmentsRepository.findById(id)
                 .orElseThrow(NotFoundException::new);
 
-        // Valida se o agendamento pode ser alterado
+        // Valida se o agendamento pode ser alterado (não pode estar concluído ou cancelado)
         if (appointments.getStatus() == AppointmentStatus.CONCLUDED || appointments.getStatus() == AppointmentStatus.CANCELLED) {
             throw new ReferenceException("Agendamentos concluídos ou cancelados não podem ser alterados.");
         }
 
-        // (Lógica de validação e cálculo idêntica ao CREATE)
-
+        // A lógica de validação e cálculo é idêntica à do método de criação
         final Barbershop barbershop = barbershopRepository.findById(appointmentsDTO.getBarbershopId())
                 .orElseThrow(() -> new NotFoundException("Barbearia não encontrada"));
-
         final Customer customer = customerRepository.findById(appointmentsDTO.getCustomerId())
                 .orElseThrow(() -> new NotFoundException("Cliente não encontrado"));
-
         final Barber barber = barberRepository.findById(appointmentsDTO.getBarberId())
                 .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
 
@@ -201,22 +211,33 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         final OffsetDateTime startTime = appointmentsDTO.getStartTime();
         final OffsetDateTime endTime = startTime.plusMinutes(totalDuration);
 
-        // No update, temos que ignorar o próprio agendamento na verificação de conflito
+        // Valida o horário de trabalho do barbeiro
+        if (barber.getWorkStartTime() != null && barber.getWorkEndTime() != null) {
+            LocalTime appointmentStartTime = startTime.toLocalTime();
+            LocalTime appointmentEndTime = endTime.toLocalTime();
+
+            if (appointmentStartTime.isBefore(barber.getWorkStartTime()) || appointmentEndTime.isAfter(barber.getWorkEndTime())) {
+                throw new ReferenceException("O horário do agendamento está fora do expediente do barbeiro, que é das " +
+                        barber.getWorkStartTime() + " às " + barber.getWorkEndTime() + ".");
+            }
+        }
+
+        // Na atualização, a verificação de conflito deve ignorar o próprio agendamento que está sendo alterado.
         List<Appointments> conflicts = appointmentsRepository.findConflictingAppointments(
                 barber.getId(), startTime, endTime
-        ).stream().filter(a -> !a.getId().equals(id)).collect(Collectors.toList()); // Exclui o próprio ID da verificação
+        ).stream().filter(a -> !a.getId().equals(id)).collect(Collectors.toList());
 
         if (!conflicts.isEmpty()) {
             throw new ReferenceException("Horário indisponível. Já existe um agendamento neste bloco.");
         }
 
-        // Atualiza a entidade existente
+        // Atualiza a entidade existente com os novos dados
         appointments.setBarbershop(barbershop);
         appointments.setBarber(barber);
         appointments.setCustomer(customer);
         appointments.setStartTime(startTime);
         appointments.setEndTime(endTime);
-        appointments.setStatus(AppointmentStatus.SCHEDULED); // Re-agenda
+        appointments.setStatus(AppointmentStatus.SCHEDULED); // Re-agenda caso estivesse em outro estado
         appointments.setActivities(activities);
 
         appointmentsRepository.save(appointments);
@@ -242,7 +263,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             throw new NotFoundException();
         }
         // A regra de negócio sugere usar 'cancel' ao invés de delete físico
-        // para manter histórico.
+        // para manter o histórico de agendamentos. Este método deve ser usado com cautela.
         appointmentsRepository.deleteById(id);
     }
 }
