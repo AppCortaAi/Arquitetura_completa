@@ -1,4 +1,5 @@
 @startuml
+'instalar brew install graphviz antes de rodar (pra windows tem q baixar do navegador)
 left to right direction
 
 actor Cliente
