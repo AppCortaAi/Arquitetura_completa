@@ -21,16 +21,16 @@ public interface BarberService {
     List<BarbershopDTO> listBarbershops(); // Para o "mosaico" de lojas
 
     // --- Gestão de Serviços (Fluxo 1) ---
-    ActivityDTO createService(UUID ownerBarberId, @Valid CreateActivityDTO createActivityDTO);
-    List<ActivityDTO> listServices(UUID barbershopId); // Lista serviços da loja
+    ActivityDTO createActivities(UUID ownerBarberId, @Valid CreateActivityDTO createActivityDTO);
+    List<ActivityDTO> listActivities(UUID barbershopId); // Lista serviços da loja
 
     // --- Gestão de Vínculos (Fluxos 2 e 3) ---
     void requestToJoinBarbershop(UUID barberId, String cnpj);
     void approveJoinRequest(UUID ownerBarberId, Long requestId);
-    void leaveBarbershop(UUID barberId);
+    void freeBarber(UUID barberId);
 
     // --- Gestão de Habilidades (Fluxo 2) ---
-    void assignServices(UUID barberId, @Valid BarberServiceAssignDTO barberServiceAssignDTO);
+    void assignActivities(UUID barberId, @Valid BarberActivityAssignDTO barberActivityAssignDTO);
 
     // --- Métodos de validação ---
     boolean tellExists(String tell);

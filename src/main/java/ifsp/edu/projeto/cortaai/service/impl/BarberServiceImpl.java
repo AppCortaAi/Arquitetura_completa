@@ -27,7 +27,7 @@ public class BarberServiceImpl implements BarberService {
     private final BarberRepository barberRepository;
     private final BarbershopRepository barbershopRepository;
     private final BarbershopJoinRequestRepository joinRequestRepository;
-    private final ServiceRepository serviceRepository;
+    private final ActivityRepository activityRepository;
     private final ApplicationEventPublisher publisher;
     private final BarberMapper barberMapper;
     private final PasswordEncoder passwordEncoder;
@@ -39,14 +39,14 @@ public class BarberServiceImpl implements BarberService {
     public BarberServiceImpl(final BarberRepository barberRepository,
                              final BarbershopRepository barbershopRepository,
                              final BarbershopJoinRequestRepository joinRequestRepository,
-                             final ServiceRepository serviceRepository,
+                             final ActivityRepository activityRepository,
                              final ApplicationEventPublisher publisher,
                              final BarberMapper barberMapper,
                              final PasswordEncoder passwordEncoder) {
         this.barberRepository = barberRepository;
         this.barbershopRepository = barbershopRepository;
         this.joinRequestRepository = joinRequestRepository;
-        this.serviceRepository = serviceRepository;
+        this.activityRepository = activityRepository;
         this.publisher = publisher;
         this.barberMapper = barberMapper;
         this.passwordEncoder = passwordEncoder;
@@ -126,7 +126,7 @@ public class BarberServiceImpl implements BarberService {
     @Transactional
     public BarbershopDTO createBarbershop(final UUID ownerBarberId, final CreateBarbershopDTO createBarbershopDTO) {
         final Barber owner = barberRepository.findById(ownerBarberId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
 
         if (owner.getBarbershop() != null) {
             throw new ReferenceException("Barbeiro já está vinculado a uma barbearia.");
@@ -144,7 +144,7 @@ public class BarberServiceImpl implements BarberService {
         barberRepository.save(owner);
 
         // TODO: Retornar DTO usando o BarbershopMapper
-        // return barbershopMapper.toDTO(savedBarbershop);
+//         return barbershopMapper.toDTO(savedBarbershop);
         throw new UnsupportedOperationException("BarbershopMapper ainda não implementado");
     }
 
@@ -167,7 +167,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public ActivityDTO createService(final UUID ownerBarberId, final CreateActivityDTO createActivityDTO) {
+    public ActivityDTO createActivities(final UUID ownerBarberId, final CreateActivityDTO createActivityDTO) {
         final Barber owner = barberRepository.findById(ownerBarberId)
                 .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
 
@@ -175,12 +175,12 @@ public class BarberServiceImpl implements BarberService {
             throw new ReferenceException("Apenas o dono da barbearia pode criar serviços.");
         }
 
-        final Activity service = new Activity();
-        service.setBarbershop(owner.getBarbershop());
-        service.setActivityName(createActivityDTO.getActivityName());
-        service.setPrice(createActivityDTO.getPrice());
-        service.setDurationMinutes(createActivityDTO.getDurationMinutes());
-        final Activity savedService = serviceRepository.save(service);
+        final Activity activity = new Activity();
+        activity.setBarbershop(owner.getBarbershop());
+        activity.setActivityName(createActivityDTO.getActivityName());
+        activity.setPrice(createActivityDTO.getPrice());
+        activity.setDurationMinutes(createActivityDTO.getDurationMinutes());
+        final Activity savedActivity = activityRepository.save(activity);
 
         // TODO: Retornar DTO usando o ServiceMapper
         // return serviceMapper.toDTO(savedService);
@@ -188,7 +188,7 @@ public class BarberServiceImpl implements BarberService {
     }
 
     @Override
-    public List<ActivityDTO> listServices(final UUID barbershopId) {
+    public List<ActivityDTO> listActivities(final UUID barbershopId) {
         // TODO: Implementar com ServiceMapper
         // return serviceRepository.findByBarbershopId(barbershopId).stream().map(serviceMapper::toDTO).toList();
         throw new UnsupportedOperationException("ServiceMapper ainda não implementado");
@@ -252,7 +252,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void leaveBarbershop(final UUID barberId) {
+    public void freeBarber(final UUID barberId) {
         final Barber barber = barberRepository.findById(barberId)
                 .orElseThrow(NotFoundException::new);
 
@@ -273,7 +273,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void assignServices(final UUID barberId, final BarberServiceAssignDTO barberServiceAssignDTO) {
+    public void assignActivities(final UUID barberId, final BarberActivityAssignDTO barberActivityAssignDTO) {
         final Barber barber = barberRepository.findById(barberId)
                 .orElseThrow(NotFoundException::new);
 
@@ -285,7 +285,7 @@ public class BarberServiceImpl implements BarberService {
 
         // Busca os serviços e valida se pertencem à loja correta
         final Set<Activity> servicesToAssign = new HashSet<>(
-                serviceRepository.findAllById(barberServiceAssignDTO.getActivityIds())
+                activityRepository.findAllById(barberActivityAssignDTO.getActivityIds())
         );
 
         for (Activity s : servicesToAssign) {

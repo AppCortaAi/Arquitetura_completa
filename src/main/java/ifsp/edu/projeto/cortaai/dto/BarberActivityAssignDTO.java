@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class BarberServiceAssignDTO {
+public class BarberActivityAssignDTO {
 
     @NotEmpty
     private List<UUID> activityIds;

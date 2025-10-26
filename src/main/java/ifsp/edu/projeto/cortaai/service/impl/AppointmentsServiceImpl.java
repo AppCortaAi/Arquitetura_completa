@@ -26,20 +26,20 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     private final BarberRepository barberRepository;
     private final CustomerRepository customerRepository;
     private final BarbershopRepository barbershopRepository;
-    private final ServiceRepository serviceRepository;
+    private final ActivityRepository activityRepository;
     private final AppointmentMapper appointmentMapper;
 
     public AppointmentsServiceImpl(final AppointmentsRepository appointmentsRepository,
                                    final BarberRepository barberRepository,
                                    final CustomerRepository customerRepository,
                                    final BarbershopRepository barbershopRepository,
-                                   final ServiceRepository serviceRepository,
+                                   final ActivityRepository activityRepository,
                                    final AppointmentMapper appointmentMapper) {
         this.appointmentsRepository = appointmentsRepository;
         this.barberRepository = barberRepository;
         this.customerRepository = customerRepository;
         this.barbershopRepository = barbershopRepository;
-        this.serviceRepository = serviceRepository;
+        this.activityRepository = activityRepository;
         this.appointmentMapper = appointmentMapper;
     }
 
@@ -77,16 +77,16 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         }
 
         // 3. Validar serviços e calcular tempo
-        final Set<Activity> services = new HashSet<>(
-                serviceRepository.findAllById(appointmentsDTO.getActivityIds())
+        final Set<Activity> activities = new HashSet<>(
+                activityRepository.findAllById(appointmentsDTO.getActivityIds())
         );
 
-        if(services.size() != appointmentsDTO.getActivityIds().size()) {
+        if(activities.size() != appointmentsDTO.getActivityIds().size()) {
             throw new NotFoundException("Um ou mais serviços não foram encontrados.");
         }
 
         int totalDuration = 0;
-        for (Activity s : services) {
+        for (Activity s : activities) {
             // 3a. Valida se o serviço é da barbearia
             if (!s.getBarbershop().getId().equals(barbershop.getId())) {
                 throw new ReferenceException("Serviço " + s.getActivityName() + " não pertence a esta barbearia.");
@@ -118,7 +118,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         appointments.setStartTime(startTime);
         appointments.setEndTime(endTime);
         appointments.setStatus(AppointmentStatus.SCHEDULED);
-        appointments.setActivities(services);
+        appointments.setActivities(activities);
 
         return appointmentsRepository.save(appointments).getId();
     }
@@ -150,7 +150,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         }
 
         final Set<Activity> activities = new HashSet<>(
-                serviceRepository.findAllById(appointmentsDTO.getActivityIds())
+                activityRepository.findAllById(appointmentsDTO.getActivityIds())
         );
 
         int totalDuration = 0;

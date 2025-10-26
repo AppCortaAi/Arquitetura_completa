@@ -29,15 +29,15 @@ public class BarbershopController {
         return ResponseEntity.ok(barberService.listBarbershops());
     }
 
-    @GetMapping("/barbershops/{shopId}/services")
+    @GetMapping("/barbershops/{shopId}/activities") //servicos da barbearia
     public ResponseEntity<List<ActivityDTO>> listServicesForBarbershop(
             @PathVariable(name = "shopId") final UUID shopId) {
-        return ResponseEntity.ok(barberService.listServices(shopId));
+        return ResponseEntity.ok(barberService.listActivities(shopId));
     }
 
     // --- Fluxo 1: Gestão do Dono (Owner) ---
 
-    @PostMapping("/barbers/{ownerId}/barbershops")
+    @PostMapping("/barbers/{ownerId}/barbershops/register") //get barbershop do owner id
     @ApiResponse(responseCode = "201")
     public ResponseEntity<BarbershopDTO> createBarbershop(
             @PathVariable(name = "ownerId") final UUID ownerId,
@@ -46,12 +46,12 @@ public class BarbershopController {
         return new ResponseEntity<>(createdBarbershop, HttpStatus.CREATED);
     }
 
-    @PostMapping("/barbers/{ownerId}/barbershops/services")
+    @PostMapping("/barbers/{ownerId}/barbershops/activities")
     @ApiResponse(responseCode = "201")
-    public ResponseEntity<ActivityDTO> createService(
+    public ResponseEntity<ActivityDTO> createActivities(
             @PathVariable(name = "ownerId") final UUID ownerId,
             @RequestBody @Valid final CreateActivityDTO createActivityDTO) {
-        final ActivityDTO createdService = barberService.createService(ownerId, createActivityDTO);
+        final ActivityDTO createdService = barberService.createActivities(ownerId, createActivityDTO);
         return new ResponseEntity<>(createdService, HttpStatus.CREATED);
     }
 
@@ -75,22 +75,22 @@ public class BarbershopController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/barbers/{barberId}/assign-services")
+    @PostMapping("/barbers/{barberId}/assign-activities")
     @ApiResponse(responseCode = "204")
-    public ResponseEntity<Void> assignServicesToBarber(
+    public ResponseEntity<Void> assignActivitiesToBarber(
             @PathVariable(name = "barberId") final UUID barberId,
-            @RequestBody @Valid final BarberServiceAssignDTO assignDTO) {
-        barberService.assignServices(barberId, assignDTO);
+            @RequestBody @Valid final BarberActivityAssignDTO assignDTO) {
+        barberService.assignActivities(barberId, assignDTO);
         return ResponseEntity.noContent().build();
     }
 
     // --- Fluxo 3: Sair da Loja ---
 
-    @PostMapping("/barbers/{barberId}/leave-barbershop")
+    @PostMapping("/barbers/{barberId}/free-barber")
     @ApiResponse(responseCode = "204")
-    public ResponseEntity<Void> leaveBarbershop(
+    public ResponseEntity<Void> freeBarber(
             @PathVariable(name = "barberId") final UUID barberId) {
-        barberService.leaveBarbershop(barberId);
+        barberService.freeBarber(barberId);
         return ResponseEntity.noContent().build();
     }
 }
