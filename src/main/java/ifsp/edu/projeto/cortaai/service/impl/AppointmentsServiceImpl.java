@@ -79,6 +79,7 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AppointmentsDTO> findAll() {
         final List<Appointments> appointmentsList = appointmentsRepository.findAll(Sort.by("id"));
         return appointmentsList.stream()

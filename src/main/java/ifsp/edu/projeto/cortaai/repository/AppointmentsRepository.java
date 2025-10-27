@@ -45,5 +45,12 @@ public interface AppointmentsRepository extends JpaRepository<Appointments, Long
      * Encontra todos os agendamentos de uma barbearia.
      * Útil para a visualização do Dono (Owner).
      */
-    List<Appointments> findByBarbershopId(UUID barbershopId); // NOVO MÉTODO
+    List<Appointments> findByBarbershopId(UUID barbershopId);
+
+
+    /**
+     * Método para encontrar agendamentos de um barbeiro em um intervalo de tempo (um dia específico)
+     * Útil para o agendamento
+     */
+    List<Appointments> findByBarberIdAndStartTimeBetween(UUID barberId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
 }

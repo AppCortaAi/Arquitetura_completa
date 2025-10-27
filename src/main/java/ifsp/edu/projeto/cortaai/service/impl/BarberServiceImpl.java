@@ -20,11 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
 
 @Service
 public class BarberServiceImpl implements BarberService {
@@ -42,6 +42,7 @@ public class BarberServiceImpl implements BarberService {
     // DEPENDÊNCIAS ADICIONADAS
     private final StorageService storageService;
     private final BarbershopHighlightRepository barbershopHighlightRepository;
+    private final AppointmentsRepository appointmentsRepository;
 
     public BarberServiceImpl(final BarberRepository barberRepository,
                              final BarbershopRepository barbershopRepository,
@@ -52,8 +53,9 @@ public class BarberServiceImpl implements BarberService {
                              final PasswordEncoder passwordEncoder,
                              final BarbershopMapper barbershopMapper,
                              final ActivityMapper activityMapper,
-                             final StorageService storageService, // ADICIONADO AO CONSTRUTOR
-                             final BarbershopHighlightRepository barbershopHighlightRepository) { // ADICIONADO AO CONSTRUTOR
+                             final StorageService storageService,
+                             final BarbershopHighlightRepository barbershopHighlightRepository,
+                             final AppointmentsRepository appointmentsRepository) {
         this.barberRepository = barberRepository;
         this.barbershopRepository = barbershopRepository;
         this.joinRequestRepository = joinRequestRepository;
@@ -63,8 +65,9 @@ public class BarberServiceImpl implements BarberService {
         this.passwordEncoder = passwordEncoder;
         this.barbershopMapper = barbershopMapper;
         this.activityMapper = activityMapper;
-        this.storageService = storageService; // INJETADO
+        this.storageService = storageService;
         this.barbershopHighlightRepository = barbershopHighlightRepository; // INJETADO
+        this.appointmentsRepository = appointmentsRepository;
     }
 
     // --- Gestão de Barbeiros (Global) ---
@@ -540,5 +543,64 @@ public class BarberServiceImpl implements BarberService {
         }
 
         return owner.getBarbershop();
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<LocalTime> getAvailableSlots(UUID barberId, LocalDate date, int durationInMinutes) {
+        final Barber barber = barberRepository.findById(barberId)
+                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
+
+        // Se o barbeiro não definiu horário de trabalho, não há horários disponíveis
+        if (barber.getWorkStartTime() == null || barber.getWorkEndTime() == null) {
+            return new ArrayList<>(); // Retorna lista vazia
+        }
+
+        // Define o início e o fim do dia para a consulta no banco
+        OffsetDateTime startOfDay = date.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endOfDay = date.atTime(23, 59, 59).atOffset(ZoneOffset.UTC);
+
+        // Busca todos os agendamentos do barbeiro para o dia especificado
+        List<Appointments> appointments = appointmentsRepository.findByBarberIdAndStartTimeBetween(barberId, startOfDay, endOfDay);
+
+        List<LocalTime> availableSlots = new ArrayList<>();
+
+        // Define o intervalo de tempo para verificar os slots (ex: a cada 30 minutos)
+        int slotInterval = 30;
+
+        // Inicia a verificação a partir do horário de início do expediente do barbeiro
+        LocalTime potentialSlot = barber.getWorkStartTime();
+
+        while (potentialSlot.isBefore(barber.getWorkEndTime())) {
+            LocalTime slotStart = potentialSlot;
+            LocalTime slotEnd = slotStart.plusMinutes(durationInMinutes);
+
+            // Verifica se o slot termina depois do fim do expediente
+            if (slotEnd.isAfter(barber.getWorkEndTime())) {
+                break; // Encerra o loop se o slot ultrapassar o horário de trabalho
+            }
+
+            boolean isAvailable = true;
+            // Verifica se o slot atual conflita com algum agendamento existente
+            for (Appointments appointment : appointments) {
+                LocalTime appointmentStart = appointment.getStartTime().toLocalTime();
+                LocalTime appointmentEnd = appointment.getEndTime().toLocalTime();
+
+                // Condição de conflito: (StartA < EndB) and (EndA > StartB)
+                if (slotStart.isBefore(appointmentEnd) && slotEnd.isAfter(appointmentStart)) {
+                    isAvailable = false;
+                    break; // Se encontrou conflito, o slot não está disponível
+                }
+            }
+
+            // Se, após verificar todos os agendamentos, o slot continuou disponível, adiciona à lista
+            if (isAvailable) {
+                availableSlots.add(slotStart);
+            }
+
+            // Avança para o próximo slot potencial
+            potentialSlot = potentialSlot.plusMinutes(slotInterval);
+        }
+
+        return availableSlots;
     }
 }

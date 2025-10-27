@@ -9,8 +9,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -73,6 +77,17 @@ public class BarberController {
     public ResponseEntity<Void> deleteBarber(@PathVariable(name = "id") final UUID id) {
         barberService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // NOVO: Endpoint para obter a lista de horários disponíveis
+    @GetMapping("/{id}/availability")
+    public ResponseEntity<List<LocalTime>> getBarberAvailability(
+            @PathVariable(name = "id") final UUID id,
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate date,
+            @RequestParam("duration") final int duration) {
+
+        List<LocalTime> availableSlots = barberService.getAvailableSlots(id, date, duration);
+        return ResponseEntity.ok(availableSlots);
     }
 
     // --- NOVO ENDPOINT DE UPLOAD ---

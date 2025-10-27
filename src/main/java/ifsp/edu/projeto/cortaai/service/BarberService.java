@@ -4,9 +4,11 @@ import ifsp.edu.projeto.cortaai.dto.*;
 import jakarta.validation.Valid;
 import ifsp.edu.projeto.cortaai.dto.JoinRequestDTO;
 import ifsp.edu.projeto.cortaai.dto.UpdateBarbershopDTO;
-import org.springframework.web.multipart.MultipartFile; // IMPORT ADICIONADO
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException; // IMPORT ADICIONADO
+import java.io.IOException;
+import java.time.LocalDate; // NOVO: IMPORT ADICIONADO
+import java.time.LocalTime; // NOVO: IMPORT ADICIONADO
 import java.util.List;
 import java.util.UUID;
 
@@ -41,6 +43,9 @@ public interface BarberService {
     // --- Gestão de Habilidades (Fluxo 2) ---
     void assignActivities(UUID barberId, @Valid BarberActivityAssignDTO barberActivityAssignDTO);
     void setWorkHours(UUID barberId, BarberWorkHoursDTO workHoursDTO);
+
+    // NOVO: Método para obter horários disponíveis de um barbeiro
+    List<LocalTime> getAvailableSlots(UUID barberId, LocalDate date, int durationInMinutes);
 
     // --- Métodos de validação ---
     boolean tellExists(String tell);
