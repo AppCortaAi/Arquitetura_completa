@@ -61,9 +61,16 @@ public class Barbershop {
     @Column(name = "logo_url", length = 255)
     private String logoUrl;
 
+    @Column(name = "logo_url_public_id", length = 255) // NOVA COLUNA
+    private String logoUrlPublicId;
+
     @Column(name = "banner_url", length = 255)
     private String bannerUrl;
 
+    @Column(name = "banner_url_public_id", length = 255) // NOVA COLUNA
+    private String bannerUrlPublicId;
+
+    // Relacionamento: 1 Barbearia tem N Destaques
     @OneToMany(mappedBy = "barbershop", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<BarbershopHighlight> highlights;
 }

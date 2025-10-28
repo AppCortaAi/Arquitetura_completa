@@ -23,9 +23,6 @@ public class AppointmentRequestDTO {
     @NotNull
     private UUID barberId;
 
-    @NotNull
-    private UUID customerId; // Em um cenário real, isso viria do usuário autenticado
-
     @NotEmpty
     private List<UUID> activityIds;
 

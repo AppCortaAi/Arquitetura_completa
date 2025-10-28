@@ -2,6 +2,8 @@ package ifsp.edu.projeto.cortaai.service;
 
 import ifsp.edu.projeto.cortaai.dto.AppointmentRequestDTO;
 import ifsp.edu.projeto.cortaai.dto.AppointmentsDTO;
+import ifsp.edu.projeto.cortaai.model.Appointments;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -11,15 +13,28 @@ public interface AppointmentsService {
 
     AppointmentsDTO get(Long id);
 
-    Long create(AppointmentRequestDTO appointmentsDTO);
+    // ALTERADO: Adicionado String customerEmail
+    Long create(AppointmentRequestDTO appointmentsDTO, String customerEmail);
 
-    void update(Long id, AppointmentRequestDTO appointmentsDTO);
+    // ALTERADO: Adicionado String customerEmail
+    void update(Long id, AppointmentRequestDTO appointmentsDTO, String customerEmail);
 
-    void cancel(Long id); // Regra de negócio: "status deve ser atualizado (ex: CANCELLED)"
+    // ALTERADO: Adicionado String userEmail (pode ser cliente ou dono)
+    void cancel(Long id, String userEmail);
 
-    List<AppointmentsDTO> findForBarbershop(UUID ownerId);
+    // ALTERADO: de UUID ownerId para String ownerEmail
+    List<AppointmentsDTO> findForBarbershop(String ownerEmail);
 
-    List<AppointmentsDTO> findForBarber(UUID barberId);
+    List<AppointmentsDTO> findForCustomer(final String customerEmail);
 
-    void delete(Long id); // Mantido caso a exclusão física ainda seja necessária
+    // ALTERADO: de UUID barberId para String barberEmail
+    List<AppointmentsDTO> findForBarber(String barberEmail);
+
+    // ALTERADO: Adicionado String userEmail
+    void delete(Long id, String userEmail);
+
+
+
+
 }
+

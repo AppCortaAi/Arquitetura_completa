@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.validator.constraints.br.CNPJ;
 
 @Getter
 @Setter
@@ -17,6 +18,7 @@ public class CreateBarbershopDTO {
 
     @NotBlank
     @Size(min = 14, max = 14) // Validando tamanho do CNPJ
+    @CNPJ
     private String cnpj;
 
     @Size(max = 255)

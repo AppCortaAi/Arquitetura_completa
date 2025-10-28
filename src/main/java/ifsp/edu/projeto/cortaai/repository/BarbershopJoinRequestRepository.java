@@ -21,4 +21,10 @@ public interface BarbershopJoinRequestRepository extends JpaRepository<Barbersho
     Útil para verificar se um pedido já foi feito.*/
     Optional<BarbershopJoinRequest> findByBarberIdAndBarbershopId(UUID barberId, UUID barbershopId);
 
+    /**
+     * Encontra todos os pedidos de um barbeiro específico.
+     * Usado para o histórico do barbeiro.
+     */
+    List<BarbershopJoinRequest> findByBarberId(UUID barberId);
+
 }

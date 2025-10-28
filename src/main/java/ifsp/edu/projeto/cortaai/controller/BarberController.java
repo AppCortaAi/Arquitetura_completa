@@ -1,14 +1,12 @@
 package ifsp.edu.projeto.cortaai.controller;
 
-import ifsp.edu.projeto.cortaai.dto.BarberDTO;
-import ifsp.edu.projeto.cortaai.dto.CreateBarberDTO;
-import ifsp.edu.projeto.cortaai.dto.CustomerDTO;
-import ifsp.edu.projeto.cortaai.dto.LoginDTO;
+import ifsp.edu.projeto.cortaai.dto.*;
 import ifsp.edu.projeto.cortaai.service.BarberService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -19,7 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.*;import ifsp.edu.projeto.cortaai.dto.BarberWorkHoursDTO;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -51,31 +49,67 @@ public class BarberController {
         return new ResponseEntity<>(createdId, HttpStatus.CREATED);
     }
     @PostMapping("/login")
-    public ResponseEntity<BarberDTO> login(@RequestBody @Valid final LoginDTO loginDTO) {
-        final BarberDTO barber = barberService.login(loginDTO);
-        return ResponseEntity.ok(barber);
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid final LoginDTO loginDTO) { // TIPO DE RETORNO ALTERADO
+        final LoginResponseDTO loginResponse = barberService.login(loginDTO); // TIPO DE RETORNO ALTERADO
+        return ResponseEntity.ok(loginResponse);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UUID> updateBarber(@PathVariable(name = "id") final UUID id,
-                                             @RequestBody @Valid final BarberDTO barberDTO) { // Usa o novo BarberDTO
-        barberService.update(id, barberDTO);
-        return ResponseEntity.ok(id);
+    @PutMapping("/me") // ROTA ALTERADA
+    public ResponseEntity<Void> updateBarber(
+            Principal principal, // Usuário autenticado injetado
+            @RequestBody @Valid final BarberDTO barberDTO) {
+
+        barberService.update(principal.getName(), barberDTO);
+        return ResponseEntity.ok().build(); // Retorna 200 OK
     }
 
-    @PutMapping("/{id}/work-hours")
+    @PutMapping("/me/work-hours")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> setBarberWorkHours(
-            @PathVariable(name = "id") final UUID id,
+            Principal principal, // Usuário autenticado injetado
             @RequestBody @Valid final BarberWorkHoursDTO workHoursDTO) {
-        barberService.setWorkHours(id, workHoursDTO);
+
+        barberService.setWorkHours(principal.getName(), workHoursDTO);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/{id}")
+    // NOVO MÉTODO (movido do BarbershopController)
+    @PostMapping("/me/assign-activities")
     @ApiResponse(responseCode = "204")
-    public ResponseEntity<Void> deleteBarber(@PathVariable(name = "id") final UUID id) {
-        barberService.delete(id);
+    public ResponseEntity<Void> assignActivitiesToBarber(
+            Principal principal,
+            @RequestBody @Valid final BarberActivityAssignDTO assignDTO) {
+        // (Requer ROLE_BARBER)
+        barberService.assignActivities(principal.getName(), assignDTO);
+        return ResponseEntity.noContent().build();
+    }
+
+    // NOVO MÉTODO
+    @GetMapping("/me/join-requests/history")
+    public ResponseEntity<List<JoinRequestHistoryDTO>> getBarberJoinRequestHistory(Principal principal) {
+        // (Requer ROLE_BARBER)
+        List<JoinRequestHistoryDTO> history = barberService.getJoinRequestHistory(principal.getName()); // Chama o novo método do serviço
+        return ResponseEntity.ok(history);
+    }
+
+    // NOVO: Endpoint para rejeitar pedido de entrada (adaptado para o BarberController)
+    @PostMapping("/me/join-requests/{requestId}/reject") // ROTA ALTERADA para /me para consistência
+    @ApiResponse(responseCode = "204")
+    public ResponseEntity<Void> rejectJoinRequest(
+            @PathVariable(name = "requestId") final Long requestId,
+            Principal principal) {
+        // (Requer ROLE_OWNER)
+        // O serviço usará o e-mail do principal para validar se ele é o dono
+        // da barbearia associada ao pedido antes de rejeitá-lo.
+        barberService.rejectJoinRequest(principal.getName(), requestId); // Chama o novo método do serviço
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @DeleteMapping("/me") // ROTA ALTERADA
+    @ApiResponse(responseCode = "204")
+    public ResponseEntity<Void> deleteBarber(Principal principal) { // Usuário autenticado injetado
+        barberService.delete(principal.getName());
         return ResponseEntity.noContent().build();
     }
 
@@ -91,12 +125,12 @@ public class BarberController {
     }
 
     // --- NOVO ENDPOINT DE UPLOAD ---
-    @PostMapping("/{id}/upload-photo")
+    @PostMapping("/me/upload-photo") // ROTA ALTERADA
     public ResponseEntity<String> uploadBarberPhoto(
-            @PathVariable(name = "id") final UUID id,
+            Principal principal, // Usuário autenticado injetado
             @RequestParam("file") MultipartFile file) {
         try {
-            String imageUrl = barberService.updateBarberProfilePhoto(id, file);
+            String imageUrl = barberService.updateBarberProfilePhoto(principal.getName(), file);
             return ResponseEntity.ok(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());

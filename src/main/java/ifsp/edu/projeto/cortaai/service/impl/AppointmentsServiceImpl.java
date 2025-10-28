@@ -45,26 +45,33 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         this.appointmentMapper = appointmentMapper;
     }
 
+    // MÉTODO AUXILIAR NOVO
+    private Customer findCustomerByEmail(String email) {
+        return customerRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Cliente (usuário autenticado) não encontrado"));
+    }
+
+    private Barber findBarberByEmail(String email) {
+        return barberRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Barbeiro (usuário autenticado) não encontrado"));
+    }
+
     @Override
     @Transactional(readOnly = true)
-    public List<AppointmentsDTO> findForBarber(final UUID barberId) {
-        // Valida se o barbeiro existe
-        if (!barberRepository.existsById(barberId)) {
-            throw new NotFoundException("Barbeiro não encontrado");
-        }
+    public List<AppointmentsDTO> findForBarber(final String barberEmail) { // ALTERADO
+        // Valida se o barbeiro existe (pelo email)
+        final Barber barber = findBarberByEmail(barberEmail);
 
-        // Busca os agendamentos e mapeia para DTO
-        return appointmentsRepository.findByBarberId(barberId).stream()
+        return appointmentsRepository.findByBarberId(barber.getId()).stream()
                 .map(appointmentMapper::toDTO)
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<AppointmentsDTO> findForBarbershop(final UUID ownerId) {
-        // Valida se o requisitante é o dono
-        final Barber owner = barberRepository.findById(ownerId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+    public List<AppointmentsDTO> findForBarbershop(final String ownerEmail) { // ALTERADO
+        // Valida se o requisitante é o dono (pelo email)
+        final Barber owner = findBarberByEmail(ownerEmail);
 
         if (!owner.isOwner() || owner.getBarbershop() == null) {
             throw new ReferenceException("Apenas o dono de uma barbearia pode ver a agenda completa.");
@@ -72,8 +79,20 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
         final UUID barbershopId = owner.getBarbershop().getId();
 
-        // Busca os agendamentos e mapeia para DTO
         return appointmentsRepository.findByBarbershopId(barbershopId).stream()
+                .map(appointmentMapper::toDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AppointmentsDTO> findForCustomer(final String customerEmail) {
+        // 1. Busca o cliente pelo e-mail do token JWT (padrão do projeto)
+        // Este método já lança NotFoundException se o cliente não existir.
+        final Customer customer = findCustomerByEmail(customerEmail);
+
+        // 2. Busca os agendamentos e mapeia para DTO
+        return appointmentsRepository.findByCustomerId(customer.getId()).stream()
                 .map(appointmentMapper::toDTO)
                 .toList();
     }
@@ -96,13 +115,13 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
     @Override
     @Transactional
-    public Long create(final AppointmentRequestDTO appointmentsDTO) {
-        // 1. Validar e buscar entidades principais do banco de dados
+    public Long create(final AppointmentRequestDTO appointmentsDTO, final String customerEmail) { // ALTERADO
+        // 1. Validar e buscar entidades
         final Barbershop barbershop = barbershopRepository.findById(appointmentsDTO.getBarbershopId())
                 .orElseThrow(() -> new NotFoundException("Barbearia não encontrada"));
 
-        final Customer customer = customerRepository.findById(appointmentsDTO.getCustomerId())
-                .orElseThrow(() -> new NotFoundException("Cliente não encontrado"));
+        // Busca o cliente PELO EMAIL DO TOKEN
+        final Customer customer = findCustomerByEmail(customerEmail);
 
         final Barber barber = barberRepository.findById(appointmentsDTO.getBarberId())
                 .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
@@ -162,21 +181,25 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         final Appointments appointments = new Appointments();
         appointments.setBarbershop(barbershop);
         appointments.setBarber(barber);
-        appointments.setCustomer(customer);
-        appointments.setStartTime(startTime);
-        appointments.setEndTime(endTime);
+        appointments.setCustomer(customer); // Define o cliente autenticado
+        appointments.setStartTime(appointmentsDTO.getStartTime());
+        appointments.setEndTime(endTime); // 'endTime' calculado dentro da sua lógica existente
         appointments.setStatus(AppointmentStatus.SCHEDULED);
-        appointments.setActivities(activities);
+        appointments.setActivities(activities); // 'activities' validadas dentro da sua lógica
 
         return appointmentsRepository.save(appointments).getId();
     }
 
     @Override
     @Transactional
-    public void update(final Long id, final AppointmentRequestDTO appointmentsDTO) {
+    public void update(final Long id, final AppointmentRequestDTO appointmentsDTO, final String customerEmail) { // ALTERADO
         final Appointments appointments = appointmentsRepository.findById(id)
                 .orElseThrow(NotFoundException::new);
-
+        // VALIDAÇÃO DE PERMISSÃO
+        final Customer customer = findCustomerByEmail(customerEmail);
+        if (!appointments.getCustomer().getId().equals(customer.getId())) {
+            throw new ReferenceException("Você só pode alterar seus próprios agendamentos.");
+        }
         // Valida se o agendamento pode ser alterado (não pode estar concluído ou cancelado)
         if (appointments.getStatus() == AppointmentStatus.CONCLUDED || appointments.getStatus() == AppointmentStatus.CANCELLED) {
             throw new ReferenceException("Agendamentos concluídos ou cancelados não podem ser alterados.");
@@ -185,8 +208,6 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         // A lógica de validação e cálculo é idêntica à do método de criação
         final Barbershop barbershop = barbershopRepository.findById(appointmentsDTO.getBarbershopId())
                 .orElseThrow(() -> new NotFoundException("Barbearia não encontrada"));
-        final Customer customer = customerRepository.findById(appointmentsDTO.getCustomerId())
-                .orElseThrow(() -> new NotFoundException("Cliente não encontrado"));
         final Barber barber = barberRepository.findById(appointmentsDTO.getBarberId())
                 .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
 
@@ -233,22 +254,44 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         }
 
         // Atualiza a entidade existente com os novos dados
-        appointments.setBarbershop(barbershop);
-        appointments.setBarber(barber);
-        appointments.setCustomer(customer);
-        appointments.setStartTime(startTime);
-        appointments.setEndTime(endTime);
-        appointments.setStatus(AppointmentStatus.SCHEDULED); // Re-agenda caso estivesse em outro estado
-        appointments.setActivities(activities);
+        appointments.setBarbershop(barbershop); // 'barbershop' validado
+        appointments.setBarber(barber); // 'barber' validado
+        appointments.setCustomer(customer); // Define o cliente autenticado
+        appointments.setStartTime(startTime); // 'startTime' do DTO
+        appointments.setEndTime(endTime); // 'endTime' calculado
+        appointments.setStatus(AppointmentStatus.SCHEDULED);
+        appointments.setActivities(activities); // 'activities' validadas
 
         appointmentsRepository.save(appointments);
     }
 
     @Override
     @Transactional
-    public void cancel(final Long id) {
+    public void cancel(final Long id, final String userEmail) { // ALTERADO
         final Appointments appointments = appointmentsRepository.findById(id)
                 .orElseThrow(NotFoundException::new);
+
+        // Tenta encontrar um cliente ou barbeiro com o email
+        final Customer customer = customerRepository.findByEmail(userEmail).orElse(null);
+        final Barber barber = barberRepository.findByEmail(userEmail).orElse(null);
+
+        boolean isOwner = (barber != null && barber.isOwner() && barber.getBarbershop() != null);
+        boolean isCustomer = (customer != null);
+
+        boolean canCancel = false;
+
+        // REGRA 1: O cliente que agendou pode cancelar
+        if (isCustomer && appointments.getCustomer().getId().equals(customer.getId())) {
+            canCancel = true;
+        }
+        // REGRA 2: O dono da barbearia do agendamento pode cancelar
+        else if (isOwner && appointments.getBarbershop().getId().equals(barber.getBarbershop().getId())) {
+            canCancel = true;
+        }
+
+        if (!canCancel) {
+            throw new ReferenceException("Você não tem permissão para cancelar este agendamento.");
+        }
 
         if (appointments.getStatus() == AppointmentStatus.CONCLUDED) {
             throw new ReferenceException("Agendamentos concluídos não podem ser cancelados.");
@@ -259,12 +302,19 @@ public class AppointmentsServiceImpl implements AppointmentsService {
     }
 
     @Override
-    public void delete(final Long id) {
-        if (!appointmentsRepository.existsById(id)) {
-            throw new NotFoundException();
+    public void delete(final Long id, final String userEmail) { // ALTERADO
+        // Implementar lógica de permissão similar ao CANCEL se necessário
+        final Appointments appointments = appointmentsRepository.findById(id)
+                .orElseThrow(NotFoundException::new);
+
+        final Barber barber = barberRepository.findByEmail(userEmail).orElse(null);
+        boolean isOwner = (barber != null && barber.isOwner() && barber.getBarbershop() != null);
+
+        // Apenas o dono da barbearia pode deletar fisicamente
+        if (isOwner && appointments.getBarbershop().getId().equals(barber.getBarbershop().getId())) {
+            appointmentsRepository.deleteById(id);
+        } else {
+            throw new ReferenceException("Apenas o dono da barbearia pode excluir agendamentos fisicamente.");
         }
-        // A regra de negócio sugere usar 'cancel' ao invés de delete físico
-        // para manter o histórico de agendamentos. Este método deve ser usado com cautela.
-        appointmentsRepository.deleteById(id);
     }
 }

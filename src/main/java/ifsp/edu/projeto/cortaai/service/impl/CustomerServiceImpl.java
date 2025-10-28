@@ -1,14 +1,13 @@
 package ifsp.edu.projeto.cortaai.service.impl;
 
-import ifsp.edu.projeto.cortaai.dto.CustomerCreateDTO;
-import ifsp.edu.projeto.cortaai.dto.CustomerDTO;
-import ifsp.edu.projeto.cortaai.dto.LoginDTO;
+import ifsp.edu.projeto.cortaai.dto.*;
 import ifsp.edu.projeto.cortaai.events.BeforeDeleteCustomer;
 import ifsp.edu.projeto.cortaai.exception.NotFoundException;
 import ifsp.edu.projeto.cortaai.mapper.CustomerMapper;
 import ifsp.edu.projeto.cortaai.model.Customer;
 import ifsp.edu.projeto.cortaai.repository.CustomerRepository;
 import ifsp.edu.projeto.cortaai.service.CustomerService;
+import ifsp.edu.projeto.cortaai.service.JwtTokenService;
 import ifsp.edu.projeto.cortaai.service.StorageService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
@@ -28,18 +27,26 @@ public class CustomerServiceImpl implements CustomerService {
     private final ApplicationEventPublisher publisher;
     private final CustomerMapper customerMapper;
     private final PasswordEncoder passwordEncoder;
-    private final StorageService storageService; // DEPENDÊNCIA ADICIONADA
+    private final StorageService storageService;
+    private final JwtTokenService jwtTokenService; // NOVA DEPENDÊNCIA
 
     public CustomerServiceImpl(final CustomerRepository customerRepository,
                                final ApplicationEventPublisher publisher,
                                final CustomerMapper customerMapper,
                                final PasswordEncoder passwordEncoder,
-                               final StorageService storageService) { // ADICIONADO AO CONSTRUTOR
+                               final StorageService storageService,
+                               final JwtTokenService jwtTokenService) { // ADICIONADO AO CONSTRUTOR
         this.customerRepository = customerRepository;
         this.publisher = publisher;
         this.customerMapper = customerMapper;
         this.passwordEncoder = passwordEncoder;
-        this.storageService = storageService; // INJETADO
+        this.storageService = storageService;
+        this.jwtTokenService = jwtTokenService; // INJETADO
+    }
+
+    private Customer findCustomerByEmail(String email) {
+        return customerRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Cliente (usuário autenticado) não encontrado"));
     }
 
     @Override
@@ -51,8 +58,8 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    @Transactional // Garante que a transação seja apenas de leitura
-    public CustomerDTO login(final LoginDTO loginDTO) {
+    @Transactional(readOnly = true)
+    public LoginResponseDTO login(final LoginDTO loginDTO) { // TIPO DE RETORNO ALTERADO
         final Customer customer = customerRepository.findByEmail(loginDTO.getEmail())
                 .orElseThrow(() -> new NotFoundException("Usuário ou senha inválidos"));
 
@@ -61,7 +68,17 @@ public class CustomerServiceImpl implements CustomerService {
             throw new NotFoundException("Usuário ou senha inválidos");
         }
 
-        return customerMapper.toDTO(customer);
+        // 1. Gera o token JWT para o cliente
+        final String token = jwtTokenService.generateToken(customer);
+
+        // 2. Mapeia o cliente para DTO
+        final CustomerDTO customerDTO = customerMapper.toDTO(customer);
+
+        // 3. Retorna o LoginResponseDTO (com token e dados do usuário)
+        return LoginResponseDTO.builder()
+                .token(token)
+                .userData(customerDTO)
+                .build();
     }
 
     @Override
@@ -84,17 +101,16 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public void update(final UUID id, final CustomerDTO customerDTO) {
-        final Customer customer = customerRepository.findById(id)
-                .orElseThrow(NotFoundException::new);
+    @Transactional // Adicionada anotação
+    public void update(final String email, final CustomerDTO customerDTO) { // ALTERADO
+        // Busca o cliente pelo e-mail do token
+        final Customer customer = findCustomerByEmail(email);
 
         customer.setName(customerDTO.getName());
         customer.setTell(customerDTO.getTell());
         customer.setEmail(customerDTO.getEmail());
         customer.setDocumentCPF(customerDTO.getDocumentCPF());
 
-        // A imagem é atualizada por outro método (updateProfilePhoto)
-        // Mas se for enviado no DTO, podemos atualizar aqui também
         if(customerDTO.getImageUrl() != null) {
             customer.setImageUrl(customerDTO.getImageUrl());
         }
@@ -103,10 +119,12 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public void delete(final UUID id) {
-        final Customer customer = customerRepository.findById(id)
-                .orElseThrow(NotFoundException::new);
-        publisher.publishEvent(new BeforeDeleteCustomer(id));
+    @Transactional // Adicionada anotação
+    public void delete(final String email) { // ALTERADO
+        // Busca o cliente pelo e-mail do token
+        final Customer customer = findCustomerByEmail(email);
+
+        publisher.publishEvent(new BeforeDeleteCustomer(customer.getId()));
         customerRepository.delete(customer);
     }
 
@@ -129,18 +147,23 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional
-    public String updateProfilePhoto(UUID customerId, MultipartFile file) throws IOException {
-        // 1. Verifica se o cliente existe
-        final Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new NotFoundException("Cliente não encontrado"));
+    public String updateProfilePhoto(String email, MultipartFile file) throws IOException {
+        final Customer customer = findCustomerByEmail(email);
 
-        // 2. Faz o upload do arquivo para o Cloudinary na pasta "customer-profiles"
-        final String imageUrl = storageService.uploadFile(file, "customer-profiles");
+        // 1. Deletar foto antiga, se existir
+        String oldPublicId = customer.getImageUrlPublicId();
+        if (oldPublicId != null) {
+            storageService.deleteFile(oldPublicId);
+        }
 
-        // 3. Salva a URL no banco de dados
-        customer.setImageUrl(imageUrl);
+        // 2. Faz o upload da nova foto
+        final UploadResultDTO uploadResult = storageService.uploadFile(file, "customer-profiles");
+
+        // 3. Salva a URL e o Public ID
+        customer.setImageUrl(uploadResult.getSecureUrl());
+        customer.setImageUrlPublicId(uploadResult.getPublicId());
         customerRepository.save(customer);
 
-        return imageUrl;
+        return uploadResult.getSecureUrl(); // Retorna a nova URL
     }
 }

@@ -11,7 +11,9 @@ import ifsp.edu.projeto.cortaai.model.*;
 import ifsp.edu.projeto.cortaai.model.enums.JoinRequestStatus;
 import ifsp.edu.projeto.cortaai.repository.*;
 import ifsp.edu.projeto.cortaai.service.BarberService;
+import ifsp.edu.projeto.cortaai.service.JwtTokenService;
 import ifsp.edu.projeto.cortaai.service.StorageService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -43,6 +45,10 @@ public class BarberServiceImpl implements BarberService {
     private final StorageService storageService;
     private final BarbershopHighlightRepository barbershopHighlightRepository;
     private final AppointmentsRepository appointmentsRepository;
+    private final JwtTokenService jwtTokenService;
+
+    @Value("${app.availability.slot-interval-minutes}")
+    private int slotIntervalMinutes;
 
     public BarberServiceImpl(final BarberRepository barberRepository,
                              final BarbershopRepository barbershopRepository,
@@ -55,7 +61,8 @@ public class BarberServiceImpl implements BarberService {
                              final ActivityMapper activityMapper,
                              final StorageService storageService,
                              final BarbershopHighlightRepository barbershopHighlightRepository,
-                             final AppointmentsRepository appointmentsRepository) {
+                             final AppointmentsRepository appointmentsRepository,
+                             final JwtTokenService jwtTokenService) {
         this.barberRepository = barberRepository;
         this.barbershopRepository = barbershopRepository;
         this.joinRequestRepository = joinRequestRepository;
@@ -68,9 +75,16 @@ public class BarberServiceImpl implements BarberService {
         this.storageService = storageService;
         this.barbershopHighlightRepository = barbershopHighlightRepository; // INJETADO
         this.appointmentsRepository = appointmentsRepository;
+        this.jwtTokenService = jwtTokenService;
     }
 
     // --- Gestão de Barbeiros (Global) ---
+
+    // MÉTODO AUXILIAR NOVO
+    private Barber findBarberByEmail(String email) {
+        return barberRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Barbeiro (usuário autenticado) não encontrado"));
+    }
 
     @Override
     public List<BarberDTO> findAll() {
@@ -81,7 +95,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional(readOnly = true)
-    public BarberDTO login(final LoginDTO loginDTO) {
+    public LoginResponseDTO login(final LoginDTO loginDTO) { // TIPO DE RETORNO ALTERADO
         final Barber barber = barberRepository.findByEmail(loginDTO.getEmail())
                 .orElseThrow(() -> new NotFoundException("Usuário ou senha inválidos"));
 
@@ -89,7 +103,17 @@ public class BarberServiceImpl implements BarberService {
             throw new NotFoundException("Usuário ou senha inválidos");
         }
 
-        return barberMapper.toDTO(barber);
+        // 1. Gera o token JWT para o barbeiro
+        final String token = jwtTokenService.generateToken(barber);
+
+        // 2. Mapeia o barbeiro para DTO
+        final BarberDTO barberDTO = barberMapper.toDTO(barber);
+
+        // 3. Retorna o LoginResponseDTO
+        return LoginResponseDTO.builder()
+                .token(token)
+                .userData(barberDTO)
+                .build();
     }
 
     @Override
@@ -115,9 +139,9 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void update(final UUID id, final BarberDTO barberDTO) {
-        final Barber barber = barberRepository.findById(id)
-                .orElseThrow(NotFoundException::new);
+    public void update(final String email, final BarberDTO barberDTO) {
+        // Busca o barbeiro pelo e-mail do token
+        final Barber barber = findBarberByEmail(email);
 
         barber.setName(barberDTO.getName());
         barber.setTell(barberDTO.getTell());
@@ -129,20 +153,19 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void delete(final UUID id) {
-        final Barber barber = barberRepository.findById(id)
-                .orElseThrow(NotFoundException::new);
-        publisher.publishEvent(new BeforeDeleteBarber(id));
+    public void delete(final String email) {
+        // Busca o barbeiro pelo e-mail do token
+        final Barber barber = findBarberByEmail(email);
+
+        publisher.publishEvent(new BeforeDeleteBarber(barber.getId()));
         barberRepository.delete(barber);
     }
 
     // --- Gestão de Barbearias (Fluxo 1) ---
-
     @Override
     @Transactional
-    public BarbershopDTO createBarbershop(final UUID ownerBarberId, final CreateBarbershopDTO createBarbershopDTO) {
-        final Barber owner = barberRepository.findById(ownerBarberId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
+    public BarbershopDTO createBarbershop(final String ownerEmail, final CreateBarbershopDTO createBarbershopDTO) { // ALTERADO
+        final Barber owner = findBarberByEmail(ownerEmail); // ALTERADO
 
         if (owner.getBarbershop() != null) {
             throw new ReferenceException("Barbeiro já está vinculado a uma barbearia.");
@@ -160,9 +183,8 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public BarbershopDTO updateBarbershop(final UUID ownerId, final UpdateBarbershopDTO updateBarbershopDTO) {
-        final Barber owner = barberRepository.findById(ownerId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+    public BarbershopDTO updateBarbershop(final String ownerEmail, final UpdateBarbershopDTO updateBarbershopDTO) { // ALTERADO
+        final Barber owner = findBarberByEmail(ownerEmail); // ALTERADO
 
         if (!owner.isOwner() || owner.getBarbershop() == null) {
             throw new ReferenceException("Apenas o dono de uma barbearia pode editar suas informações.");
@@ -197,14 +219,13 @@ public class BarberServiceImpl implements BarberService {
 
     // --- Gestão de Serviços (Fluxo 1) ---
 
-    /**
-     * Permite que um barbeiro (dono) crie um novo serviço para sua barbearia.
-     */
+
+     // Permite que um barbeiro (dono) crie um novo serviço para sua barbearia.
+
     @Override
     @Transactional
-    public ActivityDTO createActivities(final UUID ownerBarberId, final CreateActivityDTO createActivityDTO) {
-        final Barber owner = barberRepository.findById(ownerBarberId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+    public ActivityDTO createActivities(final String ownerEmail, final CreateActivityDTO createActivityDTO) { // ALTERADO
+        final Barber owner = findBarberByEmail(ownerEmail); // ALTERADO
 
         if (!owner.isOwner() || owner.getBarbershop() == null) {
             throw new ReferenceException("Apenas o dono da barbearia pode criar serviços.");
@@ -212,17 +233,14 @@ public class BarberServiceImpl implements BarberService {
 
         // Usa o mapper para converter o DTO para a entidade
         final Activity activity = activityMapper.toEntity(createActivityDTO);
-        activity.setBarbershop(owner.getBarbershop()); // Associa a atividade à barbearia do dono
-
+        activity.setBarbershop(owner.getBarbershop());
         final Activity savedActivity = activityRepository.save(activity);
-
-        // Retorna o DTO da atividade criada
         return activityMapper.toDTO(savedActivity);
     }
 
-    /**
-     * Lista todos os serviços (atividades) disponíveis em uma barbearia específica.
-     */
+
+     // Lista todos os serviços (atividades) disponíveis em uma barbearia específica.
+
     @Override
     public List<ActivityDTO> listActivities(final UUID barbershopId) {
         // Valida se a barbearia existe antes de buscar os serviços
@@ -253,9 +271,8 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void requestToJoinBarbershop(final UUID barberId, final String cnpj) {
-        final Barber barber = barberRepository.findById(barberId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
+    public void requestToJoinBarbershop(final String barberEmail, final String cnpj) { // ALTERADO
+        final Barber barber = findBarberByEmail(barberEmail); // ALTERADO
 
         if (barber.getBarbershop() != null) {
             throw new ReferenceException("Barbeiro já está em uma barbearia.");
@@ -264,7 +281,7 @@ public class BarberServiceImpl implements BarberService {
         final Barbershop barbershop = barbershopRepository.findByCnpj(cnpj)
                 .orElseThrow(() -> new NotFoundException("Barbearia não encontrada pelo CNPJ"));
 
-        joinRequestRepository.findByBarberIdAndBarbershopId(barberId, barbershop.getId())
+        joinRequestRepository.findByBarberIdAndBarbershopId(barber.getId(), barbershop.getId()) // ALTERADO (usa barber.getId())
                 .ifPresent(req -> {
                     throw new ReferenceException("Pedido para entrar nesta barbearia já está pendente.");
                 });
@@ -278,9 +295,8 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void approveJoinRequest(final UUID ownerBarberId, final Long requestId) {
-        final Barber owner = barberRepository.findById(ownerBarberId)
-                .orElseThrow(() -> new NotFoundException("Dono não encontrado"));
+    public void approveJoinRequest(final String ownerEmail, final Long requestId) { // ALTERADO
+        final Barber owner = findBarberByEmail(ownerEmail); // ALTERADO
 
         final BarbershopJoinRequest request = joinRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("Pedido não encontrado"));
@@ -306,14 +322,12 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void freeBarber(final UUID barberId) {
-        final Barber barber = barberRepository.findById(barberId)
-                .orElseThrow(NotFoundException::new);
+    public void freeBarber(final String barberEmail) { // ALTERADO
+        final Barber barber = findBarberByEmail(barberEmail); // ALTERADO
 
         if (barber.getBarbershop() == null) {
             return;
         }
-
         if (barber.isOwner()) {
             throw new ReferenceException("O dono não pode sair da própria barbearia (deve excluí-la ou passar a posse).");
         }
@@ -325,9 +339,8 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void removeBarber(final UUID ownerId, final UUID barberIdToRemove) {
-        final Barber owner = barberRepository.findById(ownerId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+    public void removeBarber(final String ownerEmail, final UUID barberIdToRemove) { // ALTERADO
+        final Barber owner = findBarberByEmail(ownerEmail); // ALTERADO
 
         final Barber barberToRemove = barberRepository.findById(barberIdToRemove)
                 .orElseThrow(() -> new NotFoundException("Barbeiro a ser removido não encontrado"));
@@ -351,9 +364,8 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<JoinRequestDTO> getPendingJoinRequests(final UUID ownerId) {
-        final Barber owner = barberRepository.findById(ownerId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+    public List<JoinRequestDTO> getPendingJoinRequests(final String ownerEmail) { // ALTERADO
+        final Barber owner = findBarberByEmail(ownerEmail); // ALTERADO
 
         if (!owner.isOwner() || owner.getBarbershop() == null) {
             throw new ReferenceException("Apenas o dono de uma barbearia pode ver os pedidos pendentes.");
@@ -381,13 +393,58 @@ public class BarberServiceImpl implements BarberService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<JoinRequestHistoryDTO> getJoinRequestHistory(final String barberEmail) { // ALTERADO para usar email do Principal
+        final Barber barber = findBarberByEmail(barberEmail); // Usa o helper existente para obter o barbeiro autenticado
+
+        final List<BarbershopJoinRequest> requests = joinRequestRepository.findByBarberId(barber.getId());
+
+        // Mapeia a lista de entidades para a lista de DTOs
+        return requests.stream()
+                .map(request -> {
+                    JoinRequestHistoryDTO dto = new JoinRequestHistoryDTO();
+                    dto.setRequestId(request.getId());
+                    dto.setStatus(request.getStatus());
+                    if (request.getBarbershop() != null) {
+                        dto.setBarbershopId(request.getBarbershop().getId());
+                        dto.setBarbershopName(request.getBarbershop().getName());
+                    }
+                    return dto;
+                })
+                .toList(); // Alterado de collect(Collectors.toList()) para toList()
+    }
+
+    @Override
+    @Transactional
+    public void rejectJoinRequest(final String ownerEmail, final Long requestId) { // ALTERADO para usar email do Principal
+        final Barber owner = findBarberByEmail(ownerEmail); // Usa o helper existente para obter o dono autenticado
+
+        final BarbershopJoinRequest request = joinRequestRepository.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Pedido não encontrado"));
+
+        // Valida se quem está recusando é o dono da barbearia para a qual o pedido foi feito
+        // Adicionado owner.getBarbershop() == null para evitar NullPointerException antes de chamar .getId()
+        if (!owner.isOwner() || owner.getBarbershop() == null || !owner.getBarbershop().getId().equals(request.getBarbershop().getId())) {
+            throw new ReferenceException("Apenas o dono desta barbearia pode recusar pedidos.");
+        }
+
+        // Valida se o pedido ainda está pendente
+        if(request.getStatus() != JoinRequestStatus.PENDING) {
+            throw new ReferenceException("Este pedido não está mais pendente.");
+        }
+
+        request.setStatus(JoinRequestStatus.REJECTED);
+        joinRequestRepository.save(request);
+    }
+
+
     // --- Gestão de Habilidades (Fluxo 2) ---
 
     @Override
     @Transactional
-    public void assignActivities(final UUID barberId, final BarberActivityAssignDTO barberActivityAssignDTO) {
-        final Barber barber = barberRepository.findById(barberId)
-                .orElseThrow(NotFoundException::new);
+    public void assignActivities(final String barberEmail, final BarberActivityAssignDTO barberActivityAssignDTO) { // ALTERADO
+        final Barber barber = findBarberByEmail(barberEmail); // ALTERADO
 
         if (barber.getBarbershop() == null) {
             throw new ReferenceException("Barbeiro não está em uma barbearia para vincular serviços.");
@@ -411,9 +468,9 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void setWorkHours(final UUID barberId, final BarberWorkHoursDTO workHoursDTO) {
-        final Barber barber = barberRepository.findById(barberId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
+    public void setWorkHours(final String email, final BarberWorkHoursDTO workHoursDTO) {
+        // Busca o barbeiro pelo e-mail do token
+        final Barber barber = findBarberByEmail(email);
 
         if (workHoursDTO.getWorkStartTime().isAfter(workHoursDTO.getWorkEndTime())) {
             throw new ReferenceException("O horário de início do expediente deve ser anterior ao de término.");
@@ -444,76 +501,115 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public String updateBarberProfilePhoto(UUID barberId, MultipartFile file) throws IOException {
-        final Barber barber = barberRepository.findById(barberId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
+    public String updateBarberProfilePhoto(String email, MultipartFile file) throws IOException {
+        final Barber barber = findBarberByEmail(email);
 
-        final String imageUrl = storageService.uploadFile(file, "barber-profiles");
+        // 1. Deletar foto antiga
+        String oldPublicId = barber.getImageUrlPublicId();
+        if (oldPublicId != null) {
+            storageService.deleteFile(oldPublicId);
+        }
 
-        barber.setImageUrl(imageUrl);
+        // 2. Faz o upload
+        final UploadResultDTO uploadResult = storageService.uploadFile(file, "barber-profiles");
+
+        // 3. Salva
+        barber.setImageUrl(uploadResult.getSecureUrl());
+        barber.setImageUrlPublicId(uploadResult.getPublicId());
         barberRepository.save(barber);
-        return imageUrl;
+        return uploadResult.getSecureUrl();
     }
 
     @Override
     @Transactional
-    public String updateActivityPhoto(UUID ownerId, UUID activityId, MultipartFile file) throws IOException {
-        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
+    public String updateActivityPhoto(String ownerEmail, UUID activityId, MultipartFile file) throws IOException {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerEmail);
 
         final Activity activity = activityRepository.findById(activityId)
                 .orElseThrow(() -> new NotFoundException("Serviço (Activity) não encontrado"));
-
         if (!activity.getBarbershop().getId().equals(barbershop.getId())) {
             throw new ReferenceException("Este serviço não pertence à sua barbearia.");
         }
 
-        final String imageUrl = storageService.uploadFile(file, "activity-images");
+        // 1. Deletar foto antiga
+        String oldPublicId = activity.getImageUrlPublicId();
+        if (oldPublicId != null) {
+            storageService.deleteFile(oldPublicId);
+        }
 
-        activity.setImageUrl(imageUrl);
+        // 2. Upload
+        final UploadResultDTO uploadResult = storageService.uploadFile(file, "activity-images");
+
+        // 3. Salva
+        activity.setImageUrl(uploadResult.getSecureUrl());
+        activity.setImageUrlPublicId(uploadResult.getPublicId());
         activityRepository.save(activity);
-        return imageUrl;
+        return uploadResult.getSecureUrl();
     }
 
     @Override
     @Transactional
-    public String updateBarbershopLogo(UUID ownerId, MultipartFile file) throws IOException {
-        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
-        final String imageUrl = storageService.uploadFile(file, "barbershop-logos");
+    public String updateBarbershopLogo(String ownerEmail, MultipartFile file) throws IOException {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerEmail);
 
-        barbershop.setLogoUrl(imageUrl);
+        // 1. Deletar logo antigo
+        String oldPublicId = barbershop.getLogoUrlPublicId();
+        if (oldPublicId != null) {
+            storageService.deleteFile(oldPublicId);
+        }
+
+        // 2. Upload
+        final UploadResultDTO uploadResult = storageService.uploadFile(file, "barbershop-logos");
+
+        // 3. Salva
+        barbershop.setLogoUrl(uploadResult.getSecureUrl());
+        barbershop.setLogoUrlPublicId(uploadResult.getPublicId());
         barbershopRepository.save(barbershop);
-        return imageUrl;
+        return uploadResult.getSecureUrl();
     }
 
     @Override
     @Transactional
-    public String updateBarbershopBanner(UUID ownerId, MultipartFile file) throws IOException {
-        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
-        final String imageUrl = storageService.uploadFile(file, "barbershop-banners");
+    public String updateBarbershopBanner(String ownerEmail, MultipartFile file) throws IOException {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerEmail);
 
-        barbershop.setBannerUrl(imageUrl);
+        // 1. Deletar banner antigo
+        String oldPublicId = barbershop.getBannerUrlPublicId();
+        if (oldPublicId != null) {
+            storageService.deleteFile(oldPublicId);
+        }
+
+        // 2. Upload
+        final UploadResultDTO uploadResult = storageService.uploadFile(file, "barbershop-banners");
+
+        // 3. Salva
+        barbershop.setBannerUrl(uploadResult.getSecureUrl());
+        barbershop.setBannerUrlPublicId(uploadResult.getPublicId());
         barbershopRepository.save(barbershop);
-        return imageUrl;
+        return uploadResult.getSecureUrl();
     }
 
     @Override
     @Transactional
-    public String addBarbershopHighlight(UUID ownerId, MultipartFile file) throws IOException {
-        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
-        final String imageUrl = storageService.uploadFile(file, "barbershop-highlights");
+    public String addBarbershopHighlight(String ownerEmail, MultipartFile file) throws IOException {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerEmail);
+
+        // 1. Upload (não há foto antiga para deletar aqui)
+        final UploadResultDTO uploadResult = storageService.uploadFile(file, "barbershop-highlights");
 
         BarbershopHighlight highlight = new BarbershopHighlight();
         highlight.setBarbershop(barbershop);
-        highlight.setImageUrl(imageUrl);
+        highlight.setImageUrl(uploadResult.getSecureUrl());
+        highlight.setImageUrlPublicId(uploadResult.getPublicId()); // Salva o Public ID
 
         barbershopHighlightRepository.save(highlight);
-        return imageUrl;
+        return uploadResult.getSecureUrl();
     }
 
     @Override
     @Transactional
-    public void deleteBarbershopHighlight(UUID ownerId, UUID highlightId) {
-        final Barbershop barbershop = getBarbershopFromOwner(ownerId);
+    public void deleteBarbershopHighlight(String ownerEmail, UUID highlightId) {
+        final Barbershop barbershop = getBarbershopFromOwner(ownerEmail);
 
         final BarbershopHighlight highlight = barbershopHighlightRepository.findById(highlightId)
                 .orElseThrow(() -> new NotFoundException("Imagem de destaque não encontrada"));
@@ -522,9 +618,18 @@ public class BarberServiceImpl implements BarberService {
             throw new ReferenceException("Esta imagem não pertence à sua barbearia.");
         }
 
-        // NOTA: Idealmente, você também deve deletar a imagem do Cloudinary aqui.
-        // Isso requer uma lógica mais complexa no seu StorageService.
+        // 1. Deletar a imagem do Cloudinary
+        String publicId = highlight.getImageUrlPublicId();
+        if (publicId != null) {
+            try {
+                storageService.deleteFile(publicId);
+            } catch (IOException e) {
+                // Em um app real, logaríamos o erro, mas não impediríamos a exclusão do banco
+                // logger.error("Falha ao deletar arquivo do Cloudinary: " + publicId, e);
+            }
+        }
 
+        // 2. Deletar a entidade do banco
         barbershopHighlightRepository.delete(highlight);
     }
 
@@ -534,9 +639,8 @@ public class BarberServiceImpl implements BarberService {
     /**
      * Valida se o ID pertence a um dono e retorna a barbearia dele.
      */
-    private Barbershop getBarbershopFromOwner(UUID ownerId) {
-        final Barber owner = barberRepository.findById(ownerId)
-                .orElseThrow(() -> new NotFoundException("Barbeiro (Dono) não encontrado"));
+    private Barbershop getBarbershopFromOwner(String ownerEmail) { // NOVA ASSINATURA
+        final Barber owner = findBarberByEmail(ownerEmail); // Usa o helper existente
 
         if (!owner.isOwner() || owner.getBarbershop() == null) {
             throw new ReferenceException("Apenas o dono de uma barbearia pode realizar esta ação.");
@@ -544,63 +648,84 @@ public class BarberServiceImpl implements BarberService {
 
         return owner.getBarbershop();
     }
+
     @Override
     @Transactional(readOnly = true)
     public List<LocalTime> getAvailableSlots(UUID barberId, LocalDate date, int durationInMinutes) {
         final Barber barber = barberRepository.findById(barberId)
                 .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
 
-        // Se o barbeiro não definiu horário de trabalho, não há horários disponíveis
         if (barber.getWorkStartTime() == null || barber.getWorkEndTime() == null) {
-            return new ArrayList<>(); // Retorna lista vazia
+            return new ArrayList<>(); // Expediente não definido
         }
 
-        // Define o início e o fim do dia para a consulta no banco
+        // 1. Definir os limites do dia de trabalho
+        final LocalTime workStart = barber.getWorkStartTime();
+        final LocalTime workEnd = barber.getWorkEndTime();
+
+        // 2. Buscar agendamentos existentes (apenas os agendados ou concluídos)
         OffsetDateTime startOfDay = date.atStartOfDay().atOffset(ZoneOffset.UTC);
         OffsetDateTime endOfDay = date.atTime(23, 59, 59).atOffset(ZoneOffset.UTC);
 
-        // Busca todos os agendamentos do barbeiro para o dia especificado
-        List<Appointments> appointments = appointmentsRepository.findByBarberIdAndStartTimeBetween(barberId, startOfDay, endOfDay);
+        List<Appointments> existingAppointments = appointmentsRepository
+                .findByBarberIdAndStartTimeBetween(barberId, startOfDay, endOfDay)
+                .stream()
+                // Filtra agendamentos que não estão cancelados
+                .filter(a -> a.getStatus() != ifsp.edu.projeto.cortaai.model.enums.AppointmentStatus.CANCELLED)
+                // Ordena pela hora de início
+                .sorted(Comparator.comparing(Appointments::getStartTime))
+                .toList();
 
+        // 3. Criar uma lista de "blocos livres" (gaps)
+        List<LocalTime[]> freeBlocks = new ArrayList<>();
+        LocalTime currentPointer = workStart;
+
+        for (Appointments appointment : existingAppointments) {
+            LocalTime appointmentStart = appointment.getStartTime().toLocalTime();
+            LocalTime appointmentEnd = appointment.getEndTime().toLocalTime();
+
+            // Se houver um vão entre o ponteiro atual e o início do agendamento
+            if (currentPointer.isBefore(appointmentStart)) {
+                freeBlocks.add(new LocalTime[]{currentPointer, appointmentStart});
+            }
+            // Avança o ponteiro para o fim do agendamento atual
+            currentPointer = appointmentEnd;
+        }
+
+        // Adiciona o último bloco (do fim do último agendamento até o fim do expediente)
+        if (currentPointer.isBefore(workEnd)) {
+            freeBlocks.add(new LocalTime[]{currentPointer, workEnd});
+        }
+
+        // 4. Verificar quais slots cabem nos blocos livres
         List<LocalTime> availableSlots = new ArrayList<>();
+        long durationLong = (long) durationInMinutes; // Converte para long para aritmética
 
-        // Define o intervalo de tempo para verificar os slots (ex: a cada 30 minutos)
-        int slotInterval = 30;
+        for (LocalTime[] block : freeBlocks) {
+            LocalTime blockStart = block[0];
+            LocalTime blockEnd = block[1];
 
-        // Inicia a verificação a partir do horário de início do expediente do barbeiro
-        LocalTime potentialSlot = barber.getWorkStartTime();
+            // Itera dentro do bloco livre usando o intervalo definido no application.yml
+            LocalTime potentialSlotStart = blockStart;
 
-        while (potentialSlot.isBefore(barber.getWorkEndTime())) {
-            LocalTime slotStart = potentialSlot;
-            LocalTime slotEnd = slotStart.plusMinutes(durationInMinutes);
+            while (potentialSlotStart.isBefore(blockEnd)) {
+                LocalTime potentialSlotEnd = potentialSlotStart.plusMinutes(durationLong);
 
-            // Verifica se o slot termina depois do fim do expediente
-            if (slotEnd.isAfter(barber.getWorkEndTime())) {
-                break; // Encerra o loop se o slot ultrapassar o horário de trabalho
-            }
-
-            boolean isAvailable = true;
-            // Verifica se o slot atual conflita com algum agendamento existente
-            for (Appointments appointment : appointments) {
-                LocalTime appointmentStart = appointment.getStartTime().toLocalTime();
-                LocalTime appointmentEnd = appointment.getEndTime().toLocalTime();
-
-                // Condição de conflito: (StartA < EndB) and (EndA > StartB)
-                if (slotStart.isBefore(appointmentEnd) && slotEnd.isAfter(appointmentStart)) {
-                    isAvailable = false;
-                    break; // Se encontrou conflito, o slot não está disponível
+                // O slot cabe se:
+                // 1. O fim do slot não ultrapassa o fim do bloco
+                // 2. O fim do slot não ultrapassa o fim do expediente
+                if (!potentialSlotEnd.isAfter(blockEnd) && !potentialSlotEnd.isAfter(workEnd)) {
+                    availableSlots.add(potentialSlotStart);
                 }
-            }
 
-            // Se, após verificar todos os agendamentos, o slot continuou disponível, adiciona à lista
-            if (isAvailable) {
-                availableSlots.add(slotStart);
+                // Avança para o próximo ponto de verificação
+                potentialSlotStart = potentialSlotStart.plusMinutes(slotIntervalMinutes);
             }
-
-            // Avança para o próximo slot potencial
-            potentialSlot = potentialSlot.plusMinutes(slotInterval);
         }
 
         return availableSlots;
     }
+    
+
+    
 }

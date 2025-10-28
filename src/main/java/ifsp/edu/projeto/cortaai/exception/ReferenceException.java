@@ -21,6 +21,7 @@ public class ReferenceException extends RuntimeException {
     }
 
     public ReferenceException(String key) {
+        super(key); // Adiciona a chave como a mensagem da exceção pai
         this.key = key;
     }
 
@@ -30,13 +31,11 @@ public class ReferenceException extends RuntimeException {
 
     @Override
     public String getMessage() {
-        String message = key;
-        if (!params.isEmpty()) {
-            message += "," + params.stream()
-                    .map(Object::toString)
-                    .collect(Collectors.joining(","));
-        }
-        return message;
+        // ALTERADO:
+        // Retorna a 'key' (que foi passada para super(key) no construtor)
+        // A biblioteca 'error-handling' irá serializar 'key' e 'params'
+        // separadamente no JSON de resposta.
+        return this.key;
     }
 
 }

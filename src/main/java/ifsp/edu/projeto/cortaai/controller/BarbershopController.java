@@ -13,6 +13,7 @@ import ifsp.edu.projeto.cortaai.dto.UpdateBarbershopDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +34,7 @@ public class BarbershopController {
         return ResponseEntity.ok(barberService.listBarbershops());
     }
 
-    @GetMapping("/barbershops/{shopId}/activities") //servicos da barbearia
+    @GetMapping("/barbershops/{shopId}/activities")
     public ResponseEntity<List<ActivityDTO>> listServicesForBarbershop(
             @PathVariable(name = "shopId") final UUID shopId) {
         return ResponseEntity.ok(barberService.listActivities(shopId));
@@ -47,142 +48,156 @@ public class BarbershopController {
 
     // --- Fluxo 1: Gestão do Dono (Owner) ---
 
-    @PostMapping("/barbers/{ownerId}/barbershops/register") //get barbershop do owner id
+    @PostMapping("/barbershops/register-my-shop")
     @ApiResponse(responseCode = "201")
     public ResponseEntity<BarbershopDTO> createBarbershop(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @RequestBody @Valid final CreateBarbershopDTO createBarbershopDTO) {
-        final BarbershopDTO createdBarbershop = barberService.createBarbershop(ownerId, createBarbershopDTO);
+        // (Requer ROLE_BARBER)
+        final BarbershopDTO createdBarbershop = barberService.createBarbershop(principal.getName(), createBarbershopDTO); // ALTERADO
         return new ResponseEntity<>(createdBarbershop, HttpStatus.CREATED);
     }
 
-    @PostMapping("/barbers/{ownerId}/barbershops/activities")
+    // ROTA ALTERADA:
+    @PostMapping("/barbershops/my-shop/activities")
     @ApiResponse(responseCode = "201")
     public ResponseEntity<ActivityDTO> createActivities(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @RequestBody @Valid final CreateActivityDTO createActivityDTO) {
-        final ActivityDTO createdService = barberService.createActivities(ownerId, createActivityDTO);
+        // (Requer ROLE_OWNER)
+        final ActivityDTO createdService = barberService.createActivities(principal.getName(), createActivityDTO); // ALTERADO
         return new ResponseEntity<>(createdService, HttpStatus.CREATED);
     }
 
-    @PutMapping("/barbers/{ownerId}/barbershops")
+    // ROTA ALTERADA:
+    @PutMapping("/barbershops/my-shop")
     public ResponseEntity<BarbershopDTO> updateBarbershop(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @RequestBody @Valid final UpdateBarbershopDTO updateBarbershopDTO) {
-        final BarbershopDTO updatedBarbershop = barberService.updateBarbershop(ownerId, updateBarbershopDTO);
+        // (Requer ROLE_OWNER)
+        final BarbershopDTO updatedBarbershop = barberService.updateBarbershop(principal.getName(), updateBarbershopDTO); // ALTERADO
         return ResponseEntity.ok(updatedBarbershop);
     }
 
-    @DeleteMapping("/barbers/{ownerId}/remove-barber/{barberId}")
+    // ROTA ALTERADA:
+    @DeleteMapping("/barbershops/my-shop/remove-barber/{barberId}")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> removeBarber(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @PathVariable(name = "barberId") final UUID barberId) {
-        barberService.removeBarber(ownerId, barberId);
+        // (Requer ROLE_OWNER)
+        barberService.removeBarber(principal.getName(), barberId); // ALTERADO
         return ResponseEntity.noContent().build();
     }
 
     // --- Fluxo 2: Gestão do Staff (Entrada e Habilidades) ---
 
-    @PostMapping("/barbers/{barberId}/join-request")
-    @ApiResponse(responseCode = "202") // 202 Accepted (pois requer aprovação)
+    // ROTA ALTERADA:
+    @PostMapping("/barbershops/join-request")
+    @ApiResponse(responseCode = "202")
     public ResponseEntity<Void> requestToJoinBarbershop(
-            @PathVariable(name = "barberId") final UUID barberId,
+            Principal principal, // ALTERADO
             @RequestBody @Valid final BarberJoinRequestDTO joinRequestDTO) {
-        barberService.requestToJoinBarbershop(barberId, joinRequestDTO.getCnpj());
+        // (Requer ROLE_BARBER)
+        barberService.requestToJoinBarbershop(principal.getName(), joinRequestDTO.getCnpj()); // ALTERADO
         return ResponseEntity.accepted().build();
     }
 
-    @GetMapping("/barbers/{ownerId}/pending-requests")
-    public ResponseEntity<List<JoinRequestDTO>> getPendingRequests(@PathVariable(name = "ownerId") final UUID ownerId) {
-        return ResponseEntity.ok(barberService.getPendingJoinRequests(ownerId));
+    // ROTA ALTERADA:
+    @GetMapping("/barbershops/my-shop/pending-requests")
+    public ResponseEntity<List<JoinRequestDTO>> getPendingRequests(Principal principal) { // ALTERADO
+        // (Requer ROLE_OWNER)
+        return ResponseEntity.ok(barberService.getPendingJoinRequests(principal.getName())); // ALTERADO
     }
 
-    @PostMapping("/barbers/{ownerId}/approve-request/{requestId}")
+    // ROTA ALTERADA:
+    @PostMapping("/barbershops/my-shop/approve-request/{requestId}")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> approveJoinRequest(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @PathVariable(name = "requestId") final Long requestId) {
-        barberService.approveJoinRequest(ownerId, requestId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/barbers/{barberId}/assign-activities")
-    @ApiResponse(responseCode = "204")
-    public ResponseEntity<Void> assignActivitiesToBarber(
-            @PathVariable(name = "barberId") final UUID barberId,
-            @RequestBody @Valid final BarberActivityAssignDTO assignDTO) {
-        barberService.assignActivities(barberId, assignDTO);
+        // (Requer ROLE_OWNER)
+        barberService.approveJoinRequest(principal.getName(), requestId); // ALTERADO
         return ResponseEntity.noContent().build();
     }
 
     // --- Fluxo 3: Sair da Loja ---
 
-    @PostMapping("/barbers/{barberId}/free-barber")
+    // ROTA ALTERADA:
+    @PostMapping("/barbershops/leave-shop")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> freeBarber(
-            @PathVariable(name = "barberId") final UUID barberId) {
-        barberService.freeBarber(barberId);
+            Principal principal) { // ALTERADO
+        // (Requer ROLE_BARBER)
+        barberService.freeBarber(principal.getName()); // ALTERADO
         return ResponseEntity.noContent().build();
     }
 
     // --- Fluxo 4: Gestao de imagens ---
-    @PostMapping("/barbers/{ownerId}/barbershops/upload-logo")
+// ROTA ALTERADA:
+    @PostMapping("/barbershops/my-shop/upload-logo")
     public ResponseEntity<String> uploadBarbershopLogo(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @RequestParam("file") MultipartFile file) {
+        // (Requer ROLE_OWNER)
         try {
-            String imageUrl = barberService.updateBarbershopLogo(ownerId, file);
+            String imageUrl = barberService.updateBarbershopLogo(principal.getName(), file); // ALTERADO
             return ResponseEntity.ok(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
         }
     }
 
-    @PostMapping("/barbers/{ownerId}/barbershops/upload-banner")
+    @PostMapping("/barbershops/my-shop/upload-banner")
     public ResponseEntity<String> uploadBarbershopBanner(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @RequestParam("file") MultipartFile file) {
+        // (Requer ROLE_OWNER)
         try {
-            String imageUrl = barberService.updateBarbershopBanner(ownerId, file);
+            String imageUrl = barberService.updateBarbershopBanner(principal.getName(), file); // ALTERADO
             return ResponseEntity.ok(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
         }
     }
 
-    @PostMapping("/barbers/{ownerId}/activities/{activityId}/upload-photo")
+    // ROTA ALTERADA:
+    @PostMapping("/barbershops/my-shop/activities/{activityId}/upload-photo")
     public ResponseEntity<String> uploadActivityPhoto(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @PathVariable(name = "activityId") final UUID activityId,
             @RequestParam("file") MultipartFile file) {
+        // (Requer ROLE_OWNER)
         try {
-            String imageUrl = barberService.updateActivityPhoto(ownerId, activityId, file);
+            String imageUrl = barberService.updateActivityPhoto(principal.getName(), activityId, file); // ALTERADO
             return ResponseEntity.ok(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
         }
     }
 
-    @PostMapping("/barbers/{ownerId}/barbershops/highlights")
+    // ROTA ALTERADA:
+    @PostMapping("/barbershops/my-shop/highlights")
     public ResponseEntity<String> addBarbershopHighlight(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @RequestParam("file") MultipartFile file) {
+        // (Requer ROLE_OWNER)
         try {
-            String imageUrl = barberService.addBarbershopHighlight(ownerId, file);
+            String imageUrl = barberService.addBarbershopHighlight(principal.getName(), file); // ALTERADO
             return ResponseEntity.status(HttpStatus.CREATED).body(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());
         }
     }
 
-    @DeleteMapping("/barbers/{ownerId}/barbershops/highlights/{highlightId}")
+    // ROTA ALTERADA:
+    @DeleteMapping("/barbershops/my-shop/highlights/{highlightId}")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> deleteBarbershopHighlight(
-            @PathVariable(name = "ownerId") final UUID ownerId,
+            Principal principal, // ALTERADO
             @PathVariable(name = "highlightId") final UUID highlightId) {
-
-        barberService.deleteBarbershopHighlight(ownerId, highlightId);
+        // (Requer ROLE_OWNER)
+        barberService.deleteBarbershopHighlight(principal.getName(), highlightId); // ALTERADO
         return ResponseEntity.noContent().build();
     }
 }

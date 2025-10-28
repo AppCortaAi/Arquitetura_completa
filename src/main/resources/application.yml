@@ -51,6 +51,19 @@ springdoc:
 server:
   forward-headers-strategy: native
 
+# NOVAS CONFIGURAÇÕES
+app:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET_KEY}
+      expiration-ms: 3600000 # 1 hora
+
+  # NOVA CONFIGURAÇÃO
+  availability:
+    # Intervalo em minutos para sugerir horários (ex: 09:00, 09:15, 09:30)
+    slot-interval-minutes: 15
+
+
 # ===============================================
 # CONFIGURAÇÕES DE LOG PARA DEBUG DO HIBERNATE
 # ===============================================

@@ -3,9 +3,10 @@ package ifsp.edu.projeto.cortaai.service;
 import ifsp.edu.projeto.cortaai.dto.CustomerCreateDTO;
 import ifsp.edu.projeto.cortaai.dto.CustomerDTO;
 import ifsp.edu.projeto.cortaai.dto.LoginDTO;
-import org.springframework.web.multipart.MultipartFile; // IMPORT ADICIONADO
+import ifsp.edu.projeto.cortaai.dto.LoginResponseDTO; // NOVO IMPORT
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException; // IMPORT ADICIONADO
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,11 +18,11 @@ public interface CustomerService {
 
     UUID create(CustomerCreateDTO customerCreateDTO);
 
-    void update(UUID id, CustomerDTO customerDTO);
+    void update(String email, CustomerDTO customerDTO);
 
-    void delete(UUID id);
+    void delete(String email);
 
-    CustomerDTO login(LoginDTO loginDTO);
+    LoginResponseDTO login(LoginDTO loginDTO); // TIPO DE RETORNO ALTERADO
 
     // --- Métodos de validação ---
     boolean tellExists(String tell);
@@ -31,6 +32,6 @@ public interface CustomerService {
     boolean documentCPFExists(String documentCPF);
 
     // NOVO MÉTODO
-    String updateProfilePhoto(UUID customerId, MultipartFile file) throws IOException;
+    String updateProfilePhoto(String email, MultipartFile file) throws IOException;
 
 }

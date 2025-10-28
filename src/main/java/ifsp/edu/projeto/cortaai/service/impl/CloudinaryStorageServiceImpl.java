@@ -2,6 +2,7 @@ package ifsp.edu.projeto.cortaai.service.impl;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import ifsp.edu.projeto.cortaai.dto.UploadResultDTO; // NOVO IMPORT
 import ifsp.edu.projeto.cortaai.service.StorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,7 +22,7 @@ public class CloudinaryStorageServiceImpl implements StorageService {
     }
 
     @Override
-    public String uploadFile(MultipartFile file, String folder) throws IOException {
+    public UploadResultDTO uploadFile(MultipartFile file, String folder) throws IOException { // RETORNO ALTERADO
 
         // Gera um nome de arquivo único (public_id) para evitar colisões
         String publicId = folder + "/" + UUID.randomUUID().toString();
@@ -33,7 +34,23 @@ public class CloudinaryStorageServiceImpl implements StorageService {
                         "folder", folder
                 ));
 
-        // Retorna a URL segura (https)
-        return (String) uploadResult.get("secure_url");
+        // Pega os valores de retorno
+        String secureUrl = (String) uploadResult.get("secure_url");
+        String generatedPublicId = (String) uploadResult.get("public_id");
+
+        // Retorna o DTO
+        return new UploadResultDTO(generatedPublicId, secureUrl);
+    }
+
+    // NOVO MÉTODO
+    @Override
+    public void deleteFile(String publicId) throws IOException {
+        if (publicId == null || publicId.isEmpty()) {
+            return; // Não tenta deletar se o ID for nulo ou vazio
+        }
+
+        // 'destroy' deleta o arquivo
+        // 'invalidate' true = invalida o cache do CDN
+        cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("invalidate", true));
     }
 }

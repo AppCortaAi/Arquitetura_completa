@@ -1,12 +1,14 @@
 package ifsp.edu.projeto.cortaai.controller;
 
 import ifsp.edu.projeto.cortaai.dto.CustomerDTO;
+import ifsp.edu.projeto.cortaai.dto.LoginResponseDTO;
 import ifsp.edu.projeto.cortaai.service.CustomerService;
 import ifsp.edu.projeto.cortaai.dto.CustomerCreateDTO;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 
 import java.io.IOException;
+import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -45,32 +47,36 @@ public class CustomerController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<CustomerDTO> login(@RequestBody @Valid final LoginDTO loginDTO) {
-        final CustomerDTO customer = customerService.login(loginDTO);
-        return ResponseEntity.ok(customer);
+    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid final LoginDTO loginDTO) { // TIPO DE RETORNO ALTERADO
+        final LoginResponseDTO loginResponse = customerService.login(loginDTO); // TIPO DE RETORNO ALTERADO
+        return ResponseEntity.ok(loginResponse);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UUID> updateCustomer(@PathVariable(name = "id") final UUID id,
-                                               @RequestBody @Valid final CustomerDTO customerDTO) {
-        customerService.update(id, customerDTO);
-        return ResponseEntity.ok(id);
+    @PutMapping("/me") // ROTA ALTERADA
+    public ResponseEntity<Void> updateCustomer(
+            Principal principal, // Usuário autenticado injetado
+            @RequestBody @Valid final CustomerDTO customerDTO) {
+
+        // Passa o e-mail (principal.getName()) para o serviço
+        customerService.update(principal.getName(), customerDTO);
+        return ResponseEntity.ok().build(); // Retorna 200 OK
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/me") // ROTA ALTERADA
     @ApiResponse(responseCode = "204")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable(name = "id") final UUID id) {
-        customerService.delete(id);
+    public ResponseEntity<Void> deleteCustomer(Principal principal) { // Usuário autenticado injetado
+        customerService.delete(principal.getName()); // Passa o e-mail
         return ResponseEntity.noContent().build();
     }
 
     // --- NOVO ENDPOINT DE UPLOAD ---
-    @PostMapping("/{id}/upload-photo")
+    @PostMapping("/me/upload-photo") // ROTA ALTERADA
     public ResponseEntity<String> uploadCustomerPhoto(
-            @PathVariable(name = "id") final UUID id,
+            Principal principal, // Usuário autenticado injetado
             @RequestParam("file") MultipartFile file) {
         try {
-            String imageUrl = customerService.updateProfilePhoto(id, file);
+            // Passa o e-mail para o serviço
+            String imageUrl = customerService.updateProfilePhoto(principal.getName(), file);
             return ResponseEntity.ok(imageUrl);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload: " + e.getMessage());

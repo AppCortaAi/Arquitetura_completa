@@ -3,36 +3,24 @@ package ifsp.edu.projeto.cortaai.mapper;
 import ifsp.edu.projeto.cortaai.dto.CreateActivityDTO;
 import ifsp.edu.projeto.cortaai.dto.ActivityDTO;
 import ifsp.edu.projeto.cortaai.model.Activity;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class ActivityMapper {
+@Mapper(componentModel = "spring")
+public interface ActivityMapper {
 
-    public ActivityDTO toDTO(Activity service) {
-        if (service == null) {
-            return null;
-        }
-        ActivityDTO dto = new ActivityDTO();
-        dto.setId(service.getId());
-        dto.setActivityName(service.getActivityName());
-        dto.setPrice(service.getPrice());
-        dto.setDurationMinutes(service.getDurationMinutes());
-        dto.setImageUrl(service.getImageUrl()); // LINHA ADICIONADA
-        if (service.getBarbershop() != null) {
-            dto.setBarbershopId(service.getBarbershop().getId());
-        }
-        return dto;
-    }
+    @Mapping(source = "barbershop.id", target = "barbershopId")
+    ActivityDTO toDTO(Activity service);
 
-    public Activity toEntity(CreateActivityDTO dto) {
-        if (dto == null) {
-            return null;
-        }
-        Activity service = new Activity();
-        service.setActivityName(dto.getActivityName());
-        service.setPrice(dto.getPrice());
-        service.setDurationMinutes(dto.getDurationMinutes());
-        // A imagem (imageUrl) não é definida na criação, mas em um endpoint de upload
-        return service;
-    }
+    // Mapeia do DTO de *criação* para a entidade
+    // Ignora a imagem (tratada pelo serviço) e a barbearia (definida pelo serviço)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "barbershop", ignore = true)
+    @Mapping(target = "imageUrl", ignore = true)
+    @Mapping(target = "imageUrlPublicId", ignore = true)
+    @Mapping(target = "dateCreated", ignore = true)
+    @Mapping(target = "lastUpdated", ignore = true)
+    @Mapping(target = "barbers", ignore = true)
+    @Mapping(target = "appointments", ignore = true)
+    Activity toEntity(CreateActivityDTO dto);
 }

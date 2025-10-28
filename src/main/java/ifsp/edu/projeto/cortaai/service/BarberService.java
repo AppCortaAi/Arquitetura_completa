@@ -18,34 +18,36 @@ public interface BarberService {
     List<BarberDTO> findAll();
     BarberDTO get(UUID id);
     UUID create(@Valid CreateBarberDTO createBarberDTO);
-    void update(UUID id, BarberDTO barberDTO);
-    void delete(UUID id);
-    BarberDTO login(LoginDTO loginDTO);
+    void update(String email, BarberDTO barberDTO);
+    void delete(String email);
+    LoginResponseDTO login(LoginDTO loginDTO);
 
     // --- Gestão de Barbearias (Fluxo 1) ---
-    BarbershopDTO createBarbershop(UUID ownerBarberId, @Valid CreateBarbershopDTO createBarbershopDTO);
-    BarbershopDTO updateBarbershop(UUID ownerId, UpdateBarbershopDTO updateBarbershopDTO);
+    BarbershopDTO createBarbershop(String ownerEmail, @Valid CreateBarbershopDTO createBarbershopDTO);
+    BarbershopDTO updateBarbershop(String ownerEmail, UpdateBarbershopDTO updateBarbershopDTO);
     BarbershopDTO getBarbershop(UUID barbershopId);
     List<BarbershopDTO> listBarbershops();
 
     // --- Gestão de Serviços (Fluxo 1) ---
-    ActivityDTO createActivities(UUID ownerBarberId, @Valid CreateActivityDTO createActivityDTO);
+    ActivityDTO createActivities(String ownerEmail, @Valid CreateActivityDTO createActivityDTO);
     List<ActivityDTO> listActivities(UUID barbershopId);
     List<BarberDTO> listBarbersByBarbershop(UUID barbershopId);
 
     // --- Gestão de Vínculos (Fluxos 2 e 3) ---
-    void requestToJoinBarbershop(UUID barberId, String cnpj);
-    void approveJoinRequest(UUID ownerBarberId, Long requestId);
-    void freeBarber(UUID barberId);
-    void removeBarber(UUID ownerId, UUID barberIdToRemove);
-    List<JoinRequestDTO> getPendingJoinRequests(UUID ownerId);
+    void requestToJoinBarbershop(String barberEmail, String cnpj);
+    void approveJoinRequest(String ownerEmail, Long requestId);
+    void freeBarber(String barberEmail);
+    void removeBarber(String ownerEmail, UUID barberIdToRemove);
+    void rejectJoinRequest(String ownerEmail, Long requestId); // NOVO
+    List<JoinRequestDTO> getPendingJoinRequests(String ownerEmail);
 
     // --- Gestão de Habilidades (Fluxo 2) ---
-    void assignActivities(UUID barberId, @Valid BarberActivityAssignDTO barberActivityAssignDTO);
-    void setWorkHours(UUID barberId, BarberWorkHoursDTO workHoursDTO);
+    void assignActivities(String barberEmail, @Valid BarberActivityAssignDTO barberActivityAssignDTO);
+    void setWorkHours(String email, BarberWorkHoursDTO workHoursDTO);
 
-    // NOVO: Método para obter horários disponíveis de um barbeiro
+    // Método para obter horários disponíveis de um barbeiro
     List<LocalTime> getAvailableSlots(UUID barberId, LocalDate date, int durationInMinutes);
+    List<JoinRequestHistoryDTO> getJoinRequestHistory(String barberEmail); // NOVO
 
     // --- Métodos de validação ---
     boolean tellExists(String tell);
@@ -53,10 +55,12 @@ public interface BarberService {
     boolean documentCPFExists(String documentCPF);
 
     // --- NOVOS MÉTODOS DE UPLOAD DE IMAGEM ---
-    String updateBarberProfilePhoto(UUID barberId, MultipartFile file) throws IOException;
-    String updateActivityPhoto(UUID ownerId, UUID activityId, MultipartFile file) throws IOException;
-    String updateBarbershopLogo(UUID ownerId, MultipartFile file) throws IOException;
-    String updateBarbershopBanner(UUID ownerId, MultipartFile file) throws IOException;
-    String addBarbershopHighlight(UUID ownerId, MultipartFile file) throws IOException;
-    void deleteBarbershopHighlight(UUID ownerId, UUID highlightId);
+    String updateBarberProfilePhoto(String email, MultipartFile file) throws IOException;
+    String updateActivityPhoto(String ownerEmail, UUID activityId, MultipartFile file) throws IOException;
+    String updateBarbershopLogo(String ownerEmail, MultipartFile file) throws IOException;
+    String updateBarbershopBanner(String ownerEmail, MultipartFile file) throws IOException;
+    String addBarbershopHighlight(String ownerEmail, MultipartFile file) throws IOException;
+    void deleteBarbershopHighlight(String ownerEmail, UUID highlightId);
+
+
 }

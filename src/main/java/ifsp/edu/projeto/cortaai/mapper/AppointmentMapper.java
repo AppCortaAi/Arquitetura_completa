@@ -3,48 +3,33 @@ package ifsp.edu.projeto.cortaai.mapper;
 import ifsp.edu.projeto.cortaai.dto.AppointmentsDTO;
 import ifsp.edu.projeto.cortaai.model.Activity;
 import ifsp.edu.projeto.cortaai.model.Appointments;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-import java.util.stream.Collectors; // Importado
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
-@Component
-public class AppointmentMapper {
+@Mapper(componentModel = "spring")
+public interface AppointmentMapper {
 
-    public AppointmentsDTO toDTO(Appointments appointments) {
-        if (appointments == null) {
-            return null;
+    @Mapping(source = "barbershop.id", target = "barbershopId")
+    @Mapping(source = "barber.id", target = "barberId")
+    @Mapping(source = "customer.id", target = "customerId")
+    @Mapping(source = "activities", target = "activityIds")
+    AppointmentsDTO toDTO(Appointments appointments);
+
+    // Método auxiliar para mapear Set<Activity> para List<UUID>
+    default List<UUID> mapActivitiesToIds(Set<Activity> activities) {
+        if (activities == null || activities.isEmpty()) {
+            return List.of();
         }
-        AppointmentsDTO appointmentsDTO = new AppointmentsDTO();
-        appointmentsDTO.setId(appointments.getId());
-        appointmentsDTO.setStartTime(appointments.getStartTime());
-        appointmentsDTO.setEndTime(appointments.getEndTime());
-        appointmentsDTO.setStatus(appointments.getStatus());
-
-        // Mapeia as entidades aninhadas para seus IDs
-        if (appointments.getBarbershop() != null) {
-            appointmentsDTO.setBarbershopId(appointments.getBarbershop().getId());
-        }
-        if (appointments.getBarber() != null) {
-            appointmentsDTO.setBarberId(appointments.getBarber().getId());
-        }
-        if (appointments.getCustomer() != null) {
-            appointmentsDTO.setCustomerId(appointments.getCustomer().getId());
-        }
-
-        // Mapeia o Set<Service> para uma List<UUID>
-        if (appointments.getActivities() != null) {
-            appointmentsDTO.setActivityIds(
-                    appointments.getActivities().stream()
-                            .map(Activity::getId)
-                            .collect(Collectors.toList())
-            );
-        }
-
-        return appointmentsDTO;
+        return activities.stream()
+                .map(Activity::getId)
+                .collect(Collectors.toList());
     }
 
-    // O método toEntity foi removido.
-    // A lógica de criação está no AppointmentsServiceImpl
-    // pois requer validações e busca de múltiplas entidades.
-
+    // Como na implementação original, NÃO há método toEntity,
+    // pois a criação de Appointments é complexa e feita no serviço.
 }

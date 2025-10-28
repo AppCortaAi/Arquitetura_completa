@@ -55,4 +55,7 @@ public class Customer {
     @Column(name = "image_url", length = 255)
     private String imageUrl;
 
+    @Column(name = "image_url_public_id", length = 255) // NOVA COLUNA
+    private String imageUrlPublicId;
+
 }

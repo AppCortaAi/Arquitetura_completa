@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.validator.constraints.br.CPF;
 
 
 @Getter
@@ -30,6 +31,7 @@ public class CustomerCreateDTO {
     @NotNull
     @Size(max = 11)
     @CustomerDocumentCPFUnique
+    @CPF
     private String documentCPF;
 
     @NotNull

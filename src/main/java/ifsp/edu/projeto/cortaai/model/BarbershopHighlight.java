@@ -21,6 +21,10 @@ public class BarbershopHighlight {
     @Column(name = "image_url", nullable = false, length = 255)
     private String imageUrl;
 
+    // (Tornamos nullable=true pois pode haver imagens antigas sem publicId)
+    @Column(name = "image_url_public_id", length = 255) // NOVA COLUNA
+    private String imageUrlPublicId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "barbershop_id", nullable = false)
     private Barbershop barbershop;
