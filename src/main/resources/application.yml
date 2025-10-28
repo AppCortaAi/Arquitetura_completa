@@ -44,6 +44,8 @@ error:
       CustomerEmailUnique: CUSTOMER_EMAIL_UNIQUE
       CustomerDocumentCPFUnique: CUSTOMER_DOCUMENT_CPFUNIQUE
       CustomerPreviousAppointmentUnique: CUSTOMER_PREVIOUS_APPOINTMENT_UNIQUE
+      CPF: INVALID_CPF
+      CNPJ: INVALID_CNPJ
 
 springdoc:
   pathsToMatch: /, /api/**
