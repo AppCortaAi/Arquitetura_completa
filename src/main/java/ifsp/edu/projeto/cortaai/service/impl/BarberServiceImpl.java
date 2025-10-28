@@ -727,5 +727,5 @@ public class BarberServiceImpl implements BarberService {
     }
     
 
-    
+    //teste
 }
