@@ -38,11 +38,17 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.get(id));
     }
 
-    @PostMapping("/register")
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiResponse(responseCode = "201")
-    public ResponseEntity<UUID> createCustomer(@RequestBody @Valid final CustomerCreateDTO customerCreateDTO) {
-        final UUID createdId = customerService.create(customerCreateDTO);
-        return new ResponseEntity<>(createdId, HttpStatus.CREATED);
+    public ResponseEntity<UUID> createCustomer(
+            @RequestPart("customer") @Valid final CustomerCreateDTO customerCreateDTO,
+            @RequestPart(value = "file", required = false) final MultipartFile file) {
+        try {
+            final UUID createdId = customerService.create(customerCreateDTO, file);
+            return new ResponseEntity<>(createdId, HttpStatus.CREATED);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 

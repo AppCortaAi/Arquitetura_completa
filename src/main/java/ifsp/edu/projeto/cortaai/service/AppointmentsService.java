@@ -13,28 +13,20 @@ public interface AppointmentsService {
 
     AppointmentsDTO get(Long id);
 
-    // ALTERADO: Adicionado String customerEmail
     Long create(AppointmentRequestDTO appointmentsDTO, String customerEmail);
 
-    // ALTERADO: Adicionado String customerEmail
     void update(Long id, AppointmentRequestDTO appointmentsDTO, String customerEmail);
 
-    // ALTERADO: Adicionado String userEmail (pode ser cliente ou dono)
     void cancel(Long id, String userEmail);
 
-    // ALTERADO: de UUID ownerId para String ownerEmail
     List<AppointmentsDTO> findForBarbershop(String ownerEmail);
 
     List<AppointmentsDTO> findForCustomer(final String customerEmail);
 
-    // ALTERADO: de UUID barberId para String barberEmail
     List<AppointmentsDTO> findForBarber(String barberEmail);
 
-    // ALTERADO: Adicionado String userEmail
     void delete(Long id, String userEmail);
 
-
-
-
+    void conclude(Long id, String barberEmail);
 }
 

@@ -88,16 +88,29 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(NotFoundException::new);
     }
 
+    // Método create alterado para aceitar o arquivo
     @Override
-    public UUID create(final CustomerCreateDTO customerCreateDTO) {
+    @Transactional
+    public UUID create(final CustomerCreateDTO customerCreateDTO, final MultipartFile file) throws IOException {
         final Customer customer = new Customer();
         customer.setName(customerCreateDTO.getName());
         customer.setTell(customerCreateDTO.getTell());
         customer.setEmail(customerCreateDTO.getEmail());
         customer.setDocumentCPF(customerCreateDTO.getDocumentCPF());
-        // Criptografa a senha antes de salvar
         customer.setPassword(passwordEncoder.encode(customerCreateDTO.getPassword()));
-        return customerRepository.save(customer).getId();
+
+        // Salva o cliente primeiro para obter um ID
+        final Customer savedCustomer = customerRepository.save(customer);
+
+        // Se a foto foi enviada, faz o upload e atualiza
+        if (file != null && !file.isEmpty()) {
+            final UploadResultDTO uploadResult = storageService.uploadFile(file, "customer-profiles");
+            savedCustomer.setImageUrl(uploadResult.getSecureUrl());
+            savedCustomer.setImageUrlPublicId(uploadResult.getPublicId());
+            customerRepository.save(savedCustomer); // Salva novamente com a URL da imagem
+        }
+
+        return savedCustomer.getId();
     }
 
     @Override

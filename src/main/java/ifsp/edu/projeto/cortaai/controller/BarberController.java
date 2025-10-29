@@ -144,6 +144,17 @@ public class BarberController {
         return ResponseEntity.ok(availableSlots);
     }
 
+    //Endpoint para obter a disponibilidade do mês
+    @GetMapping("/{id}/monthly-availability")
+    public ResponseEntity<List<DailyAvailabilityDTO>> getBarberMonthlyAvailability(
+            @PathVariable(name = "id") final UUID id,
+            @RequestParam("year") final int year,
+            @RequestParam("month") final int month) {
+
+        List<DailyAvailabilityDTO> availability = barberService.getMonthlyAvailability(id, year, month);
+        return ResponseEntity.ok(availability);
+    }
+
     // --- NOVO ENDPOINT DE UPLOAD ---
     @PostMapping("/me/upload-photo") // ROTA ALTERADA
     public ResponseEntity<String> uploadBarberPhoto(

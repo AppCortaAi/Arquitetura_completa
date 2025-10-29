@@ -177,6 +177,15 @@ public class AppointmentsServiceImpl implements AppointmentsService {
             throw new ReferenceException("Horário indisponível. Já existe um agendamento neste bloco.");
         }
 
+        // 4c. NOVA VALIDAÇÃO: Verifica conflitos na própria agenda do cliente
+        List<Appointments> customerConflicts = appointmentsRepository.findConflictingAppointmentsForCustomer(
+                customer.getId(), startTime, endTime
+        );
+
+        if (!customerConflicts.isEmpty()) {
+            throw new ReferenceException("Você já possui outro agendamento neste mesmo horário.");
+        }
+
         // 5. Se todas as validações passaram, cria e salva o novo agendamento
         final Appointments appointments = new Appointments();
         appointments.setBarbershop(barbershop);
@@ -267,37 +276,23 @@ public class AppointmentsServiceImpl implements AppointmentsService {
 
     @Override
     @Transactional
-    public void cancel(final Long id, final String userEmail) { // ALTERADO
+    public void conclude(final Long id, final String barberEmail) {
         final Appointments appointments = appointmentsRepository.findById(id)
                 .orElseThrow(NotFoundException::new);
 
-        // Tenta encontrar um cliente ou barbeiro com o email
-        final Customer customer = customerRepository.findByEmail(userEmail).orElse(null);
-        final Barber barber = barberRepository.findByEmail(userEmail).orElse(null);
+        final Barber barber = findBarberByEmail(barberEmail);
 
-        boolean isOwner = (barber != null && barber.isOwner() && barber.getBarbershop() != null);
-        boolean isCustomer = (customer != null);
-
-        boolean canCancel = false;
-
-        // REGRA 1: O cliente que agendou pode cancelar
-        if (isCustomer && appointments.getCustomer().getId().equals(customer.getId())) {
-            canCancel = true;
-        }
-        // REGRA 2: O dono da barbearia do agendamento pode cancelar
-        else if (isOwner && appointments.getBarbershop().getId().equals(barber.getBarbershop().getId())) {
-            canCancel = true;
+        // Apenas o barbeiro associado ao agendamento pode concluí-lo
+        if (!appointments.getBarber().getId().equals(barber.getId())) {
+            throw new ReferenceException("Você não tem permissão para concluir este agendamento.");
         }
 
-        if (!canCancel) {
-            throw new ReferenceException("Você não tem permissão para cancelar este agendamento.");
+        // O agendamento precisa estar com o status 'SCHEDULED'
+        if (appointments.getStatus() != AppointmentStatus.SCHEDULED) {
+            throw new ReferenceException("Apenas agendamentos com status 'Agendado' podem ser concluídos.");
         }
 
-        if (appointments.getStatus() == AppointmentStatus.CONCLUDED) {
-            throw new ReferenceException("Agendamentos concluídos não podem ser cancelados.");
-        }
-
-        appointments.setStatus(AppointmentStatus.CANCELLED);
+        appointments.setStatus(AppointmentStatus.CONCLUDED);
         appointmentsRepository.save(appointments);
     }
 
@@ -316,5 +311,47 @@ public class AppointmentsServiceImpl implements AppointmentsService {
         } else {
             throw new ReferenceException("Apenas o dono da barbearia pode excluir agendamentos fisicamente.");
         }
+    }
+
+    @Override
+    @Transactional
+    public void cancel(final Long id, final String userEmail) {
+        final Appointments appointments = appointmentsRepository.findById(id)
+                .orElseThrow(NotFoundException::new);
+
+        final Customer customer = customerRepository.findByEmail(userEmail).orElse(null);
+        final Barber barber = barberRepository.findByEmail(userEmail).orElse(null);
+
+        boolean isOwner = (barber != null && barber.isOwner() && barber.getBarbershop() != null);
+        boolean isCustomer = (customer != null);
+        // NOVA CONDIÇÃO: é o barbeiro do agendamento
+        boolean isAssignedBarber = (barber != null && appointments.getBarber().getId().equals(barber.getId()));
+
+        boolean canCancel = false;
+
+        // REGRA 1: O cliente que agendou pode cancelar
+        if (isCustomer && appointments.getCustomer().getId().equals(customer.getId())) {
+            canCancel = true;
+        }
+        // REGRA 2: O dono da barbearia do agendamento pode cancelar
+        else if (isOwner && appointments.getBarbershop().getId().equals(barber.getBarbershop().getId())) {
+            canCancel = true;
+        }
+        // REGRA 3 (NOVA): O próprio barbeiro do agendamento pode cancelar
+        else if (isAssignedBarber) {
+            canCancel = true;
+        }
+
+
+        if (!canCancel) {
+            throw new ReferenceException("Você não tem permissão para cancelar este agendamento.");
+        }
+
+        if (appointments.getStatus() == AppointmentStatus.CONCLUDED) {
+            throw new ReferenceException("Agendamentos concluídos não podem ser cancelados.");
+        }
+
+        appointments.setStatus(AppointmentStatus.CANCELLED);
+        appointmentsRepository.save(appointments);
     }
 }

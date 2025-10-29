@@ -53,6 +53,7 @@ public interface BarberService {
     // -- Método para obter horários disponíveis de um barbeiro --
     List<LocalTime> getAvailableSlots(UUID barberId, LocalDate date, int durationInMinutes);
     List<JoinRequestHistoryDTO> getJoinRequestHistory(String barberEmail); // NOVO
+    List<DailyAvailabilityDTO> getMonthlyAvailability(UUID barberId, int year, int month);
 
     // --- Métodos de validação ---
     boolean tellExists(String tell);

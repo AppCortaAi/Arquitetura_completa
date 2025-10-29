@@ -16,7 +16,7 @@ public interface CustomerService {
 
     CustomerDTO get(UUID id);
 
-    UUID create(CustomerCreateDTO customerCreateDTO);
+    UUID create(CustomerCreateDTO customerCreateDTO, MultipartFile file) throws IOException;
 
     void update(String email, CustomerDTO customerDTO);
 

@@ -83,6 +83,15 @@ public class AppointmentsController {
         appointmentsService.cancel(id, principal.getName());
         return ResponseEntity.noContent().build();
     }
+    //Endpoint para concluir um agendamento
+    @PatchMapping("/{id}/conclude")
+    @ApiResponse(responseCode = "204")
+    public ResponseEntity<Void> concludeAppointment(@PathVariable(name = "id") final Long id,
+                                                    Principal principal) {
+        // (Requer ROLE_BARBER)
+        appointmentsService.conclude(id, principal.getName());
+        return ResponseEntity.noContent().build();
+    }
 
     @DeleteMapping("/{id}")
     @ApiResponse(responseCode = "204")

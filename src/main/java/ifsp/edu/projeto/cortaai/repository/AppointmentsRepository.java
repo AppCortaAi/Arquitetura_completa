@@ -69,4 +69,13 @@ public interface AppointmentsRepository extends JpaRepository<Appointments, Long
      * @return true se existir, false caso contrário.
      */
     boolean existsByActivitiesIdAndStatus(UUID activityId, AppointmentStatus status);
+
+    /**
+     * Encontra agendamentos de um CLIENTE que se sobrepõem a um determinado intervalo de tempo.
+     * Usado para evitar que o cliente marque dois compromissos ao mesmo tempo.
+     */
+    @Query("SELECT a FROM Appointments a WHERE a.customer.id = ?1 AND " +
+            "(a.startTime < ?3 AND a.endTime > ?2) AND " +
+            "a.status <> 'CANCELLED'")
+    List<Appointments> findConflictingAppointmentsForCustomer(UUID customerId, OffsetDateTime newStartTime, OffsetDateTime newEndTime);
 }

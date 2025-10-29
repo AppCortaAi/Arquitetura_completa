@@ -135,6 +135,11 @@ public class BarberServiceImpl implements BarberService {
         barber.setPassword(passwordEncoder.encode(createBarberDTO.getPassword()));
         barber.setOwner(false);
         barber.setBarbershop(null);
+        // Define o horário de trabalho se for fornecido
+        if (createBarberDTO.getWorkStartTime() != null && createBarberDTO.getWorkEndTime() != null) {
+            barber.setWorkStartTime(createBarberDTO.getWorkStartTime());
+            barber.setWorkEndTime(createBarberDTO.getWorkEndTime());
+        }
 
         // Salva o barbeiro primeiro para ter um ID
         final Barber savedBarber = barberRepository.save(barber);
@@ -337,7 +342,7 @@ public class BarberServiceImpl implements BarberService {
     // --- Gestão de Serviços (Fluxo 1) ---
 
 
-     // Permite que um barbeiro (dono) crie um novo serviço para sua barbearia.
+    // Permite que um barbeiro (dono) crie um novo serviço para sua barbearia.
 
     @Override
     @Transactional
@@ -356,7 +361,7 @@ public class BarberServiceImpl implements BarberService {
     }
 
 
-     // Lista todos os serviços (atividades) disponíveis em uma barbearia específica.
+    // Lista todos os serviços (atividades) disponíveis em uma barbearia específica.
 
     @Override
     public List<ActivityDTO> listActivities(final UUID barbershopId) {
@@ -422,7 +427,7 @@ public class BarberServiceImpl implements BarberService {
             throw new ReferenceException("Apenas o dono desta barbearia pode aprovar pedidos.");
         }
 
-        if(request.getStatus() != JoinRequestStatus.PENDING) {
+        if (request.getStatus() != JoinRequestStatus.PENDING) {
             throw new ReferenceException("Este pedido não está mais pendente.");
         }
 
@@ -470,7 +475,7 @@ public class BarberServiceImpl implements BarberService {
             throw new ReferenceException("O barbeiro informado não pertence a esta barbearia.");
         }
 
-        if(owner.getId().equals(barberToRemove.getId())) {
+        if (owner.getId().equals(barberToRemove.getId())) {
             throw new ReferenceException("O dono não pode remover a si mesmo.");
         }
 
@@ -547,7 +552,7 @@ public class BarberServiceImpl implements BarberService {
         }
 
         // Valida se o pedido ainda está pendente
-        if(request.getStatus() != JoinRequestStatus.PENDING) {
+        if (request.getStatus() != JoinRequestStatus.PENDING) {
             throw new ReferenceException("Este pedido não está mais pendente.");
         }
 
@@ -867,7 +872,31 @@ public class BarberServiceImpl implements BarberService {
 
         return availableSlots;
     }
-    
 
-    //teste
+    @Override
+    @Transactional(readOnly = true)
+    public List<DailyAvailabilityDTO> getMonthlyAvailability(UUID barberId, int year, int month) {
+        final Barber barber = barberRepository.findById(barberId)
+                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado."));
+
+        if (barber.getWorkStartTime() == null || barber.getWorkEndTime() == null) {
+            return new ArrayList<>(); // Não há expediente, logo, não há disponibilidade.
+        }
+
+        List<DailyAvailabilityDTO> monthlyAvailability = new ArrayList<>();
+        LocalDate date = LocalDate.of(year, month, 1);
+        int daysInMonth = date.lengthOfMonth();
+
+        for (int day = 1; day <= daysInMonth; day++) {
+            LocalDate currentDate = LocalDate.of(year, month, day);
+            // Verificamos a disponibilidade para a menor duração de serviço possível (ex: 15 min)
+            // para saber se o dia está "aberto" para agendamentos.
+            List<LocalTime> slots = getAvailableSlots(barberId, currentDate, 15);
+            monthlyAvailability.add(new DailyAvailabilityDTO(currentDate, !slots.isEmpty()));
+        }
+
+        return monthlyAvailability;
+    }
+
+
 }
