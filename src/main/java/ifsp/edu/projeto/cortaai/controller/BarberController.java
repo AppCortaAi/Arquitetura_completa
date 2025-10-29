@@ -42,11 +42,19 @@ public class BarberController {
     }
 
     // Endpoint alterado para refletir o registro na plataforma
-    @PostMapping("/register")
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiResponse(responseCode = "201")
-    public ResponseEntity<UUID> createBarber(@RequestBody @Valid final CreateBarberDTO createBarberDTO) {
-        final UUID createdId = barberService.create(createBarberDTO);
-        return new ResponseEntity<>(createdId, HttpStatus.CREATED);
+    public ResponseEntity<UUID> createBarber(
+            @RequestPart("barber") @Valid final CreateBarberDTO createBarberDTO,
+            @RequestPart(value = "file", required = false) final MultipartFile file) {
+
+        try {
+            final UUID createdId = barberService.create(createBarberDTO, file);
+            return new ResponseEntity<>(createdId, HttpStatus.CREATED);
+        } catch (IOException e) {
+            // Lida com possíveis erros no upload da imagem
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid final LoginDTO loginDTO) { // TIPO DE RETORNO ALTERADO
@@ -84,7 +92,19 @@ public class BarberController {
         return ResponseEntity.noContent().build();
     }
 
-    // NOVO MÉTODO
+    @GetMapping("/me/my-activities")
+    public ResponseEntity<List<ActivityDTO>> getMyActivities(Principal principal) {
+        // (Requer ROLE_BARBER)
+        List<ActivityDTO> activities = barberService.getMyAssignedActivities(principal.getName());
+        return ResponseEntity.ok(activities);
+    }
+
+    @GetMapping("/{id}/activities")
+    public ResponseEntity<List<ActivityDTO>> getBarberActivities(@PathVariable(name = "id") final UUID id) {
+        List<ActivityDTO> activities = barberService.listActivitiesByBarber(id);
+        return ResponseEntity.ok(activities);
+    }
+
     @GetMapping("/me/join-requests/history")
     public ResponseEntity<List<JoinRequestHistoryDTO>> getBarberJoinRequestHistory(Principal principal) {
         // (Requer ROLE_BARBER)

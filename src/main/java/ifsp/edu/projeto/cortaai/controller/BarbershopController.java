@@ -48,17 +48,21 @@ public class BarbershopController {
 
     // --- Fluxo 1: Gestão do Dono (Owner) ---
 
-    @PostMapping("/barbershops/register-my-shop")
+    @PostMapping(value = "/barbershops/register-my-shop", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ApiResponse(responseCode = "201")
     public ResponseEntity<BarbershopDTO> createBarbershop(
-            Principal principal, // ALTERADO
-            @RequestBody @Valid final CreateBarbershopDTO createBarbershopDTO) {
-        // (Requer ROLE_BARBER)
-        final BarbershopDTO createdBarbershop = barberService.createBarbershop(principal.getName(), createBarbershopDTO); // ALTERADO
-        return new ResponseEntity<>(createdBarbershop, HttpStatus.CREATED);
+            Principal principal,
+            @RequestPart("shop") @Valid final CreateBarbershopDTO createBarbershopDTO,
+            @RequestPart(value = "file", required = false) final MultipartFile file) {
+
+        try {
+            final BarbershopDTO createdBarbershop = barberService.createBarbershop(principal.getName(), createBarbershopDTO, file);
+            return new ResponseEntity<>(createdBarbershop, HttpStatus.CREATED);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    // ROTA ALTERADA:
     @PostMapping("/barbershops/my-shop/activities")
     @ApiResponse(responseCode = "201")
     public ResponseEntity<ActivityDTO> createActivities(
@@ -69,7 +73,28 @@ public class BarbershopController {
         return new ResponseEntity<>(createdService, HttpStatus.CREATED);
     }
 
-    // ROTA ALTERADA:
+    // NOVO: Endpoint para editar um serviço
+    @PutMapping("/barbershops/my-shop/activities/{activityId}")
+    public ResponseEntity<ActivityDTO> updateActivity(
+            Principal principal,
+            @PathVariable final UUID activityId,
+            @RequestBody @Valid final UpdateActivityDTO updateActivityDTO) {
+        // (Requer ROLE_OWNER)
+        final ActivityDTO updatedActivity = barberService.updateActivity(principal.getName(), activityId, updateActivityDTO);
+        return ResponseEntity.ok(updatedActivity);
+    }
+
+    // NOVO: Endpoint para excluir um serviço
+    @DeleteMapping("/barbershops/my-shop/activities/{activityId}")
+    @ApiResponse(responseCode = "204")
+    public ResponseEntity<Void> deleteActivity(
+            Principal principal,
+            @PathVariable final UUID activityId) {
+        // (Requer ROLE_OWNER)
+        barberService.deleteActivity(principal.getName(), activityId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PutMapping("/barbershops/my-shop")
     public ResponseEntity<BarbershopDTO> updateBarbershop(
             Principal principal, // ALTERADO
@@ -79,7 +104,6 @@ public class BarbershopController {
         return ResponseEntity.ok(updatedBarbershop);
     }
 
-    // ROTA ALTERADA:
     @DeleteMapping("/barbershops/my-shop/remove-barber/{barberId}")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> removeBarber(
@@ -90,9 +114,19 @@ public class BarbershopController {
         return ResponseEntity.noContent().build();
     }
 
+
+    @DeleteMapping("/barbershops/my-shop/close")
+    @ApiResponse(responseCode = "204")
+    public ResponseEntity<Void> closeBarbershop(
+            Principal principal,
+            @RequestBody @Valid final CloseBarbershopRequestDTO closeBarbershopRequestDTO) {
+        // (Requer ROLE_OWNER)
+        barberService.closeBarbershop(principal.getName(), closeBarbershopRequestDTO);
+        return ResponseEntity.noContent().build();
+    }
+
     // --- Fluxo 2: Gestão do Staff (Entrada e Habilidades) ---
 
-    // ROTA ALTERADA:
     @PostMapping("/barbershops/join-request")
     @ApiResponse(responseCode = "202")
     public ResponseEntity<Void> requestToJoinBarbershop(
@@ -103,14 +137,12 @@ public class BarbershopController {
         return ResponseEntity.accepted().build();
     }
 
-    // ROTA ALTERADA:
     @GetMapping("/barbershops/my-shop/pending-requests")
     public ResponseEntity<List<JoinRequestDTO>> getPendingRequests(Principal principal) { // ALTERADO
         // (Requer ROLE_OWNER)
         return ResponseEntity.ok(barberService.getPendingJoinRequests(principal.getName())); // ALTERADO
     }
 
-    // ROTA ALTERADA:
     @PostMapping("/barbershops/my-shop/approve-request/{requestId}")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> approveJoinRequest(
@@ -123,7 +155,6 @@ public class BarbershopController {
 
     // --- Fluxo 3: Sair da Loja ---
 
-    // ROTA ALTERADA:
     @PostMapping("/barbershops/leave-shop")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> freeBarber(
@@ -134,7 +165,6 @@ public class BarbershopController {
     }
 
     // --- Fluxo 4: Gestao de imagens ---
-// ROTA ALTERADA:
     @PostMapping("/barbershops/my-shop/upload-logo")
     public ResponseEntity<String> uploadBarbershopLogo(
             Principal principal, // ALTERADO
@@ -161,7 +191,6 @@ public class BarbershopController {
         }
     }
 
-    // ROTA ALTERADA:
     @PostMapping("/barbershops/my-shop/activities/{activityId}/upload-photo")
     public ResponseEntity<String> uploadActivityPhoto(
             Principal principal, // ALTERADO
@@ -176,7 +205,6 @@ public class BarbershopController {
         }
     }
 
-    // ROTA ALTERADA:
     @PostMapping("/barbershops/my-shop/highlights")
     public ResponseEntity<String> addBarbershopHighlight(
             Principal principal, // ALTERADO
@@ -190,7 +218,6 @@ public class BarbershopController {
         }
     }
 
-    // ROTA ALTERADA:
     @DeleteMapping("/barbershops/my-shop/highlights/{highlightId}")
     @ApiResponse(responseCode = "204")
     public ResponseEntity<Void> deleteBarbershopHighlight(

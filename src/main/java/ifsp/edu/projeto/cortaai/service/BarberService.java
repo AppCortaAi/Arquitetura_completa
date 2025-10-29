@@ -17,21 +17,25 @@ public interface BarberService {
     // --- Gestão de Barbeiros (Global) ---
     List<BarberDTO> findAll();
     BarberDTO get(UUID id);
-    UUID create(@Valid CreateBarberDTO createBarberDTO);
+    UUID create(@Valid CreateBarberDTO createBarberDTO, MultipartFile file) throws IOException;
     void update(String email, BarberDTO barberDTO);
     void delete(String email);
     LoginResponseDTO login(LoginDTO loginDTO);
 
     // --- Gestão de Barbearias (Fluxo 1) ---
-    BarbershopDTO createBarbershop(String ownerEmail, @Valid CreateBarbershopDTO createBarbershopDTO);
+    BarbershopDTO createBarbershop(String ownerEmail, @Valid CreateBarbershopDTO createBarbershopDTO, MultipartFile file) throws IOException;
     BarbershopDTO updateBarbershop(String ownerEmail, UpdateBarbershopDTO updateBarbershopDTO);
     BarbershopDTO getBarbershop(UUID barbershopId);
     List<BarbershopDTO> listBarbershops();
+    void closeBarbershop(String ownerEmail, CloseBarbershopRequestDTO closeBarbershopRequestDTO);
+    ActivityDTO updateActivity(String ownerEmail, UUID activityId, UpdateActivityDTO updateActivityDTO);
+    void deleteActivity(String ownerEmail, UUID activityId);
 
     // --- Gestão de Serviços (Fluxo 1) ---
     ActivityDTO createActivities(String ownerEmail, @Valid CreateActivityDTO createActivityDTO);
     List<ActivityDTO> listActivities(UUID barbershopId);
     List<BarberDTO> listBarbersByBarbershop(UUID barbershopId);
+    List<ActivityDTO> listActivitiesByBarber(UUID barberId);
 
     // --- Gestão de Vínculos (Fluxos 2 e 3) ---
     void requestToJoinBarbershop(String barberEmail, String cnpj);
@@ -43,9 +47,10 @@ public interface BarberService {
 
     // --- Gestão de Habilidades (Fluxo 2) ---
     void assignActivities(String barberEmail, @Valid BarberActivityAssignDTO barberActivityAssignDTO);
+    List<ActivityDTO> getMyAssignedActivities(String barberEmail);
     void setWorkHours(String email, BarberWorkHoursDTO workHoursDTO);
 
-    // Método para obter horários disponíveis de um barbeiro
+    // -- Método para obter horários disponíveis de um barbeiro --
     List<LocalTime> getAvailableSlots(UUID barberId, LocalDate date, int durationInMinutes);
     List<JoinRequestHistoryDTO> getJoinRequestHistory(String barberEmail); // NOVO
 
@@ -54,7 +59,7 @@ public interface BarberService {
     boolean emailExists(String email);
     boolean documentCPFExists(String documentCPF);
 
-    // --- NOVOS MÉTODOS DE UPLOAD DE IMAGEM ---
+    // --- MÉTODOS DE UPLOAD DE IMAGEM ---
     String updateBarberProfilePhoto(String email, MultipartFile file) throws IOException;
     String updateActivityPhoto(String ownerEmail, UUID activityId, MultipartFile file) throws IOException;
     String updateBarbershopLogo(String ownerEmail, MultipartFile file) throws IOException;

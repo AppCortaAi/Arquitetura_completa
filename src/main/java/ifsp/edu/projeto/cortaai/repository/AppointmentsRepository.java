@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import ifsp.edu.projeto.cortaai.model.enums.AppointmentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -53,4 +54,19 @@ public interface AppointmentsRepository extends JpaRepository<Appointments, Long
      * Útil para o agendamento
      */
     List<Appointments> findByBarberIdAndStartTimeBetween(UUID barberId, OffsetDateTime startOfDay, OffsetDateTime endOfDay);
+
+    /**
+     * Verifica se existem agendamentos com status 'SCHEDULED' para uma barbearia.
+     * @param barbershopId O ID da barbearia.
+     * @return true se houver agendamentos agendados, false caso contrário.
+     */
+    boolean existsByBarbershopIdAndStatus(UUID barbershopId, AppointmentStatus status);
+
+    /**
+     * Verifica se existe algum agendamento com um status específico que contenha uma determinada atividade.
+     * @param activityId O ID da atividade a ser verificada.
+     * @param status O status do agendamento (ex: SCHEDULED).
+     * @return true se existir, false caso contrário.
+     */
+    boolean existsByActivitiesIdAndStatus(UUID activityId, AppointmentStatus status);
 }

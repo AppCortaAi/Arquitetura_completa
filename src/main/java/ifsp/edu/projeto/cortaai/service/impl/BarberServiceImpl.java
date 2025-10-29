@@ -8,6 +8,7 @@ import ifsp.edu.projeto.cortaai.mapper.ActivityMapper;
 import ifsp.edu.projeto.cortaai.mapper.BarberMapper;
 import ifsp.edu.projeto.cortaai.mapper.BarbershopMapper;
 import ifsp.edu.projeto.cortaai.model.*;
+import ifsp.edu.projeto.cortaai.model.enums.AppointmentStatus;
 import ifsp.edu.projeto.cortaai.model.enums.JoinRequestStatus;
 import ifsp.edu.projeto.cortaai.repository.*;
 import ifsp.edu.projeto.cortaai.service.BarberService;
@@ -125,7 +126,7 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public UUID create(final CreateBarberDTO createBarberDTO) {
+    public UUID create(final CreateBarberDTO createBarberDTO, final MultipartFile file) throws IOException { // Assinatura alterada
         final Barber barber = new Barber();
         barber.setName(createBarberDTO.getName());
         barber.setTell(createBarberDTO.getTell());
@@ -134,7 +135,19 @@ public class BarberServiceImpl implements BarberService {
         barber.setPassword(passwordEncoder.encode(createBarberDTO.getPassword()));
         barber.setOwner(false);
         barber.setBarbershop(null);
-        return barberRepository.save(barber).getId();
+
+        // Salva o barbeiro primeiro para ter um ID
+        final Barber savedBarber = barberRepository.save(barber);
+
+        // Se um arquivo foi enviado, faz o upload e atualiza o barbeiro
+        if (file != null && !file.isEmpty()) {
+            final UploadResultDTO uploadResult = storageService.uploadFile(file, "barber-profiles");
+            savedBarber.setImageUrl(uploadResult.getSecureUrl());
+            savedBarber.setImageUrlPublicId(uploadResult.getPublicId());
+            barberRepository.save(savedBarber); // Salva novamente com os dados da imagem
+        }
+
+        return savedBarber.getId();
     }
 
     @Override
@@ -164,14 +177,22 @@ public class BarberServiceImpl implements BarberService {
     // --- Gestão de Barbearias (Fluxo 1) ---
     @Override
     @Transactional
-    public BarbershopDTO createBarbershop(final String ownerEmail, final CreateBarbershopDTO createBarbershopDTO) { // ALTERADO
-        final Barber owner = findBarberByEmail(ownerEmail); // ALTERADO
+    public BarbershopDTO createBarbershop(final String ownerEmail, final CreateBarbershopDTO createBarbershopDTO, final MultipartFile file) throws IOException { // Assinatura alterada
+        final Barber owner = findBarberByEmail(ownerEmail);
 
         if (owner.getBarbershop() != null) {
             throw new ReferenceException("Barbeiro já está vinculado a uma barbearia.");
         }
 
         final Barbershop barbershop = barbershopMapper.toEntity(createBarbershopDTO);
+
+        // Se um arquivo de logo foi enviado, faz o upload ANTES de salvar
+        if (file != null && !file.isEmpty()) {
+            final UploadResultDTO uploadResult = storageService.uploadFile(file, "barbershop-logos");
+            barbershop.setLogoUrl(uploadResult.getSecureUrl());
+            barbershop.setLogoUrlPublicId(uploadResult.getPublicId());
+        }
+
         final Barbershop savedBarbershop = barbershopRepository.save(barbershop);
 
         owner.setBarbershop(savedBarbershop);
@@ -215,6 +236,102 @@ public class BarberServiceImpl implements BarberService {
         return barbershopRepository.findAll().stream()
                 .map(barbershopMapper::toDTO)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public ActivityDTO updateActivity(final String ownerEmail, final UUID activityId, final UpdateActivityDTO updateActivityDTO) {
+        // 1. Valida se o usuário é o dono e obtém a barbearia
+        final Barbershop barbershop = getBarbershopFromOwner(ownerEmail);
+
+        // 2. Busca a atividade e valida se ela pertence à barbearia do dono
+        final Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new NotFoundException("Serviço (Activity) não encontrado."));
+        if (!activity.getBarbershop().getId().equals(barbershop.getId())) {
+            throw new ReferenceException("Este serviço não pertence à sua barbearia.");
+        }
+
+        // 3. Atualiza os campos se eles foram fornecidos no DTO
+        if (updateActivityDTO.getActivityName() != null) {
+            activity.setActivityName(updateActivityDTO.getActivityName());
+        }
+        if (updateActivityDTO.getPrice() != null) {
+            activity.setPrice(updateActivityDTO.getPrice());
+        }
+        if (updateActivityDTO.getDurationMinutes() != null) {
+            activity.setDurationMinutes(updateActivityDTO.getDurationMinutes());
+        }
+
+        // 4. Salva e retorna o DTO atualizado
+        final Activity savedActivity = activityRepository.save(activity);
+        return activityMapper.toDTO(savedActivity);
+    }
+
+    @Override
+    @Transactional
+    public void deleteActivity(final String ownerEmail, final UUID activityId) {
+        // 1. Valida se o usuário é o dono e obtém a barbearia
+        final Barbershop barbershop = getBarbershopFromOwner(ownerEmail);
+
+        // 2. Busca a atividade e valida se ela pertence à barbearia do dono
+        final Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new NotFoundException("Serviço (Activity) não encontrado."));
+        if (!activity.getBarbershop().getId().equals(barbershop.getId())) {
+            throw new ReferenceException("Este serviço não pertence à sua barbearia.");
+        }
+
+        // 3. REGRA DE NEGÓCIO CRÍTICA: Verifica se o serviço está em algum agendamento futuro
+        if (appointmentsRepository.existsByActivitiesIdAndStatus(activityId, AppointmentStatus.SCHEDULED)) {
+            throw new ReferenceException("Este serviço não pode ser excluído pois está vinculado a agendamentos futuros.");
+        }
+
+        // 4. Deleta a atividade. O JPA cuidará de remover a associação das tabelas ManyToMany (barber_activities).
+        activityRepository.delete(activity);
+    }
+
+    @Override
+    @Transactional
+    public void closeBarbershop(final String ownerEmail, final CloseBarbershopRequestDTO closeBarbershopRequestDTO) {
+        // 1. Valida se o usuário é o dono da barbearia
+        final Barber owner = findBarberByEmail(ownerEmail);
+        if (!owner.isOwner() || owner.getBarbershop() == null) {
+            throw new ReferenceException("Apenas o dono de uma barbearia pode realizar esta ação.");
+        }
+
+        // 2. Valida a senha do dono para confirmar a ação
+        if (!passwordEncoder.matches(closeBarbershopRequestDTO.getPassword(), owner.getPassword())) {
+            throw new ReferenceException("Senha incorreta. Ação não autorizada.");
+        }
+
+        final Barbershop barbershop = owner.getBarbershop();
+        final UUID barbershopId = barbershop.getId();
+
+        // 3. Verifica se existem agendamentos em aberto (status = SCHEDULED)
+        if (appointmentsRepository.existsByBarbershopIdAndStatus(barbershopId, AppointmentStatus.SCHEDULED)) {
+            throw new ReferenceException("Não é possível fechar a barbearia. Existem agendamentos pendentes.");
+        }
+
+        // 4. Desvincula todos os barbeiros (staff) da barbearia
+        final List<Barber> staff = barberRepository.findByBarbershopId(barbershopId);
+        for (Barber barber : staff) {
+            // O dono será desvinculado por último, ao deletar a barbearia
+            if (!barber.getId().equals(owner.getId())) {
+                barber.setBarbershop(null);
+                barber.getActivities().clear(); // Limpa as habilidades do barbeiro
+                barberRepository.save(barber);
+            }
+        }
+
+        // 5. Deleta todas as atividades (serviços) associadas à barbearia
+        List<Activity> activities = activityRepository.findByBarbershopId(barbershopId);
+        activityRepository.deleteAll(activities);
+
+        // 6. Finalmente, deleta a barbearia.
+        owner.setBarbershop(null);
+        owner.setOwner(false);
+        barberRepository.save(owner);
+
+        barbershopRepository.delete(barbershop);
     }
 
     // --- Gestão de Serviços (Fluxo 1) ---
@@ -443,8 +560,8 @@ public class BarberServiceImpl implements BarberService {
 
     @Override
     @Transactional
-    public void assignActivities(final String barberEmail, final BarberActivityAssignDTO barberActivityAssignDTO) { // ALTERADO
-        final Barber barber = findBarberByEmail(barberEmail); // ALTERADO
+    public void assignActivities(final String barberEmail, final BarberActivityAssignDTO barberActivityAssignDTO) {
+        final Barber barber = findBarberByEmail(barberEmail);
 
         if (barber.getBarbershop() == null) {
             throw new ReferenceException("Barbeiro não está em uma barbearia para vincular serviços.");
@@ -464,6 +581,31 @@ public class BarberServiceImpl implements BarberService {
 
         barber.setActivities(servicesToAssign);
         barberRepository.save(barber);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ActivityDTO> getMyAssignedActivities(String barberEmail) {
+        // Reutiliza o método findBarberByEmail que já trata a exceção Not Found
+        final Barber barber = findBarberByEmail(barberEmail);
+
+        // Mapeia as atividades do barbeiro para DTOs
+        return barber.getActivities().stream()
+                .map(activityMapper::toDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ActivityDTO> listActivitiesByBarber(final UUID barberId) {
+        // Busca o barbeiro pelo ID. O findById já lança uma exceção se não encontrar.
+        final Barber barber = barberRepository.findById(barberId)
+                .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado."));
+
+        // Retorna a lista de atividades do barbeiro, convertida para DTOs.
+        return barber.getActivities().stream()
+                .map(activityMapper::toDTO)
+                .toList();
     }
 
     @Override
