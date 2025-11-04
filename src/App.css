@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+*{
+  margin: 0px;
+  border: 0px;
+  padding: 0px;
+}
+
+body{
+  position: relative;
+  width: 100%;
+  background-color: #333;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#root{
+  width: auto;
+  height: auto;
+}
+
+.start_container{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  height: 30rem;
+  padding-bottom: 15px;
+}
+
+.image_container{
+  position: relative;
+  background-color: white;
+  width: 160px;
+  height: 160px;
+  border-radius: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title_app{
+  color: #c19006;
+  font-family: Roboto;
+  font-size: 2.5rem;
+}
+
+.text_container{
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 7rem;
+}
+
+.slogan{
+  color: white;
+  font-family: Roboto;
+  font-size: 2.0rem;
+}
+
+.first_text{
+  color: white;
+  font-family: Roboto;
+  font-size: 1rem;
+}
+
+.button_container{
+  display: flex;
+  flex-direction: column;
+  width: 70%;
+  height: 7rem;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.start_login_button{
+  height: 3rem;
+  background-color: #c19006;
+  width: 85%;
+  cursor: pointer;
+  font-size: 15px;
+  border-radius: 10px;
+  font-family: Roboto;
+}
+
+.start_login_button:hover{
+  background-color: #ddb441;
+  transition: 0.2s;
+}
+
+.start_sign_in_button{
+  height: 3rem;
+  background-color: #4f4529;
+  width: 85%;
+  cursor: pointer;
+  color: #FFF;
+  font-size: 15px;
+  border-radius: 10px;
+  font-family: Roboto;
+}
+
+.start_sign_in_button:hover{
+  background-color: #a1863b;
+  transition: 0.2s;
+}

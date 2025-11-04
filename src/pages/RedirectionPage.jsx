@@ -1,0 +1,43 @@
+import Styles from "./CSS/RedirectionPage.module.css"
+import { useNavigate } from "react-router-dom"
+
+function RedirectionPage() {
+
+  const navigate = useNavigate();
+
+  const handleNavigationHome = () => {
+    navigate('/');
+  };
+
+  return (
+    <div className={Styles.RedirectionPage_Container}>
+
+      <div className={Styles.title_redirection}>
+        <img src="./Icons/scissors_icon.png" alt="Icone de Tesoura" />
+        <h1>CortaAI</h1>
+        <h2>Como você quer Entrar?</h2>
+      </div>
+
+
+      <div className={Styles.redirection_buttons_container}>
+        <button className={Styles.redirection_buttons}>
+          <img src="./Icons/user_icon.png" alt="Icone de Usuário" />
+          <p className={Styles.title_button}>Entrar como Cliente</p>
+          <p className={Styles.text_button}>Quero agendar um serviço</p>
+        </button>
+
+        <button className={Styles.redirection_buttons}>
+          <img src="./Icons/barber_icon.png" alt="Icone de Barbearia" />
+          <p className={Styles.title_button}>Entrar como Barbeiro</p>
+          <p className={Styles.text_button}>Quero gerenciar minha Agenda</p>
+        </button>
+
+        <button className={Styles.redirection_button_exit} onClick={handleNavigationHome}>
+          Sair
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export default RedirectionPage

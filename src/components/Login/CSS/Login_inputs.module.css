@@ -1,0 +1,89 @@
+.Login_Inputs_container {
+    position: relative;
+
+    height: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding: 2vh 0px;
+}
+
+.Login_Inputs_container form {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+
+    padding: 15px;
+}
+
+.Login_Inputs_container label {
+    display: flex;
+    flex-direction: column;
+    width: 30vw;
+    text-align: left;
+    padding: 2vh 0px;
+    font-family: Roboto;
+}
+
+.label_input {
+    margin-left: 0.5vw;
+    margin-bottom: 0.5vh;
+    color: #FFF;
+}
+
+.forgot_password_text {
+    color: rgba(255, 255, 255, 0.589);
+    font-family: Roboto;
+    text-align: right;
+    font-size: 15px;
+    margin-top: 1vh;
+    cursor: pointer;
+}
+
+.forgot_password_text:hover {
+    color: #C19006;
+    transition: 0.2s;
+}
+
+#email_input,
+#password_input {
+    width: 100%;
+    height: 8vh;
+    border-radius: 8px;
+    margin-top: 0vh;
+    background-color: #4F4F4F;
+    color: #A0A0A0;
+    padding-left: 8px;
+    font-family: Roboto;
+    font-weight: bold;
+    font-size: 15px
+}
+
+#email_input::placeholder,
+#password_input::placeholder {
+    margin-left: 1px;
+    font-family: Roboto;
+
+}
+
+.Login_button {
+    width: 60%;
+    height: 8vh;
+    border-radius: 8px;
+    margin-top: 2vh;
+    color: #333333;
+    background-color: #c19006;
+    cursor: pointer;
+    font-family: Roboto;
+    font-size: 18px;
+}
+
+.Login_button:hover {
+    background-color: #ddb441;
+    transition: 0.2s;
+}
