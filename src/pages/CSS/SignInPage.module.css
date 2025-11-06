@@ -1,0 +1,15 @@
+.SignInPage_container{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40vw;
+    height: 100vh;
+    background-color: blue;
+}
+
+.SignInPage_title_container{
+    width: 100%;
+    height: 8vh;
+    background-color: aqua;
+}
