@@ -1,76 +1,65 @@
-.Login_Inputs_container {
+.SignIn_inputs_container {
     position: relative;
+    width: 100%;
     height: auto;
+    padding: 15px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.SignIn_inputs_container form {
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 2vh 0px;
+    padding: 15px 0;
+    height: auto;
 }
 
-.Login_Inputs_container form {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-evenly;
-
-    padding: 15px;
-}
-
-.Login_Inputs_container label {
+.SignIn_inputs_container label {
     display: flex;
     flex-direction: column;
     width: 30vw;
     text-align: left;
-    padding: 2vh 0px;
+    padding: 1.5vh 0px;
     font-family: Roboto;
 }
 
-.label_input {
-    margin-left: 0.5vw;
-    margin-bottom: 0.5vh;
-    color: #FFF;
-}
-
-.forgot_password_text {
-    color: rgba(255, 255, 255, 0.589);
-    font-family: Roboto;
-    text-align: right;
-    font-size: 15px;
-    margin-top: 1vh;
-    cursor: pointer;
-}
-
-.forgot_password_text:hover {
-    color: #C19006;
-    transition: 0.2s;
-}
-
+#name_input,
 #email_input,
-#password_input {
-    width: 100%;
+#password_input,
+#confirm_password_input {
+    width: 98%;
     height: 8vh;
     border-radius: 8px;
-    margin-top: 0vh;
     background-color: #4F4F4F;
     color: #A0A0A0;
     padding-left: 8px;
     font-family: Roboto;
     font-weight: bold;
-    font-size: 15px
+    font-size: 15px;
 }
 
+.label_name p,
+.label_email p,
+.label_password p,
+.label_confirm_password p {
+    margin-left: 0.3vw;
+    margin-bottom: 0.5vh;
+    color: #FFF;
+}
+
+#name_input::placeholder,
 #email_input::placeholder,
-#password_input::placeholder {
+#password_input::placeholder,
+#confirm_password_input::placeholder {
     margin-left: 1px;
     font-family: Roboto;
-
 }
 
-.Login_button {
-    width: 60%;
+.SignIn_button {
+    width: 75%;
     height: 8vh;
     border-radius: 8px;
     margin-top: 2vh;
@@ -79,9 +68,16 @@
     cursor: pointer;
     font-family: Roboto;
     font-size: 18px;
+    margin: auto;
 }
 
-.Login_button:hover {
+.SignIn_button:hover {
     background-color: #ddb441;
     transition: 0.2s;
+}
+
+.login_link {
+    color: white;
+    font-family: Roboto;
+    margin-top: 15px;
 }
