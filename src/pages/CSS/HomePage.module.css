@@ -6,3 +6,16 @@
     width: 40vw;
     height: 100%;
 }
+
+
+@media screen and (max-width: 767px) {
+
+    body{
+        width: 100%;
+        height: 100%;
+    }
+    .homepage_container{
+        width: 100%;
+        height: 100%;
+    }
+}
