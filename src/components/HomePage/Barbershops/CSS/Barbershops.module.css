@@ -4,4 +4,7 @@
     height: auto;
     background-color: blue;
     padding: 5px 0;
+    overflow-y: auto;
+    color: white;
+    font-family: Roboto;
 }
