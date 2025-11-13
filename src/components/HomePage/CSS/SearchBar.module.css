@@ -9,10 +9,11 @@
 }
 
 .search_bar_container input{
-    width: 63%;
+    width: 60%;
     height: 6vh;
     border-radius: 0px 10px 10px 0px;
     background-color: #424242;
+    padding-left: 15px;
 }
 
 .search_bar_container div{

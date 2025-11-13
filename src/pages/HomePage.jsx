@@ -1,3 +1,4 @@
+import Barbershops from "../components/HomePage/Barbershops/Barbershops"
 import Favorite_barbershops from "../components/HomePage/Favorite_barbershops/Favorite_barbershops"
 import Navbar from "../components/HomePage/Navbar"
 import SearchBar from "../components/HomePage/SearchBar"
@@ -9,6 +10,7 @@ function HomePage() {
       <Navbar/>
       <SearchBar/>
       <Favorite_barbershops/>
+      <Barbershops/>
         {/* <h1>Teste</h1> */}
     </div>
   )
