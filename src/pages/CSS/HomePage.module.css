@@ -1,0 +1,8 @@
+.homepage_container{
+    position: relative;
+    display:flex;
+    margin: auto;
+    background-color: aqua;
+    width: 40vw;
+    height: 100%;
+}
