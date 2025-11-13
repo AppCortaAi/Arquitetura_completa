@@ -1,0 +1,14 @@
+.favorite_barbershops_container{
+    width: 100%;
+    height: 30vh;
+    background-color: green;
+    font-family: Roboto;
+    color: white;
+    padding-bottom: 10px;
+}
+
+.favorite_barbershops_container h3{
+      margin-top: 5px;
+      margin-left: 5px;
+}
+
