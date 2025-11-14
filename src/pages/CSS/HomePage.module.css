@@ -7,6 +7,16 @@
     height: 100%;
     flex-direction: column;
     align-items: center;
+    color: white;
+    font-family: Roboto;
+}
+
+.h3_container_homepage{
+    width: 100%;
+}
+
+.h3_container_homepage h3{
+    margin-left: 15px;
 }
 
 
