@@ -5,6 +5,7 @@ import StartPage from "./pages/StartPage"
 import LoginPage from "./pages/LoginPage";
 import SignInPage from "./pages/SignInPage";
 import HomePage from "./pages/HomePage";
+import Agendamento from "./pages/Agendamento";
 
 
 function AppRoutes() {
@@ -15,6 +16,7 @@ function AppRoutes() {
       <Route path="/login" element= {<LoginPage/>}/>
       <Route path="/SignIn" element={<SignInPage/>}/>
       <Route path="/homepage" element={<HomePage/>}/>
+      <Route path="/agendamento" element={<Agendamento/>}/>
     </Routes>
   )
 }
