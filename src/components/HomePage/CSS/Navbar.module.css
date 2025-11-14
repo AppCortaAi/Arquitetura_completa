@@ -1,7 +1,6 @@
 .navbar_container{
     width: 100%;
     height: 8vh;
-    background-color: brown;
     display: flex;
     flex-direction: row;
     align-items: center;

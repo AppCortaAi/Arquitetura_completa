@@ -1,12 +1,12 @@
-import Styles from "./MenuNavBar.module"
+import Styles from "./MenuNavBar.module.css"
 function MenuNavBar() {
   return (
     <div className={Styles.MenuNavBar_container}>
         <div>
-            <h3>Inicio</h3>
+            <h4>Inicio</h4>
         </div>
          <div>
-            <h3>Meus Atendimentos</h3>
+            <h4>Meus Atendimentos</h4>
         </div>
     </div>
   )
