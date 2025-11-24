@@ -1,16 +1,17 @@
-import axios from "axios";
+// src/services/api.js
+import axios from 'axios';
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/api", // O endereço do seu Back-end Spring Boot
+    baseURL: 'http://localhost:8080/api', // Ou seu link de produção
 });
 
-// Interceptador: Antes de cada requisição, insere o token se ele existir
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token"); // Vamos salvar o token aqui no login
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+// Interceptador para adicionar o Token JWT em toda requisição
+api.interceptors.request.use(async (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
 });
 
 export default api;

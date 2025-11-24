@@ -1,5 +1,5 @@
 import Styles from "./CSS/RedirectionPage.module.css"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 
 function RedirectionPage() {
 

@@ -12,7 +12,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<StartPage />} />
-      <Route path="/redirection" element={<RedirectionPage />} />
+      <Route path="/identificacao" element={<RedirectionPage />} />
       <Route path="/login" element= {<LoginPage/>}/>
       <Route path="/SignIn" element={<SignInPage/>}/>
       <Route path="/homepage" element={<HomePage/>}/>

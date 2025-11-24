@@ -4,14 +4,9 @@ import { useNavigate } from 'react-router-dom';
 function StartPage() {
 
   const navigate = useNavigate();
-
-  const handleNavigationSignIn = () => {
-    navigate('/redirection');
-  };
-
-  const handleNavigationLogin = () => {
-    navigate('/redirection');
-  };
+const handleNavigation = (action) => {
+        navigate('/identificacao', { state: { mode: action } });
+    };
 
   return (
     <div className='workscreen'>
@@ -28,8 +23,8 @@ function StartPage() {
         </div>
 
         <div className='button_container'>
-          <button className='start_login_button' onClick={handleNavigationLogin}>Login</button>
-          <button className='start_sign_in_button' onClick={handleNavigationSignIn}>Cadastre-se</button>
+          <button className='start_login_button' onClick={() => handleNavigation('login')}>Login</button>
+          <button className='start_sign_in_button' onClick={() => handleNavigation('register')}>Cadastre-se</button>
         </div>
       </div>
     </div>
