@@ -19,4 +19,17 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
+
+    @Override
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
+        // Procura o conversor padrão de JSON e adiciona o suporte a 'octet-stream'
+        for (HttpMessageConverter<?> converter : converters) {
+            if (converter instanceof MappingJackson2HttpMessageConverter) {
+                ((MappingJackson2HttpMessageConverter) converter).setSupportedMediaTypes(Arrays.asList(
+                        MediaType.APPLICATION_JSON,
+                        MediaType.APPLICATION_OCTET_STREAM // <--- O segredo está aqui
+                ));
+            }
+        }
+    }
 }
