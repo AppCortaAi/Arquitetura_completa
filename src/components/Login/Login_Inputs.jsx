@@ -1,36 +1,34 @@
 import Styles from "./CSS/Login_inputs.module.css"
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
+import { loginUser } from "../../services/authService"
 
 function Login_Inputs() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState(null);
+    const location = useLocation();
     const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
-        e.preventDefault(); // Evita recarregar a página
+    const userType = location.state?.role || "customer";
+
+   const handleLogin = async (e) => {
+        e.preventDefault();
+        setError(null);
 
         try {
-            // Tenta logar como cliente (ajuste a rota se for para barbeiros)
-            const response = await api.post("/customers/login", {
-                email: email,
-                password: password
-            });
+            // Usa o userType que veio automático da RedirectionPage
+            const data = await loginUser(email, password, userType);
 
-            // O Back-end retorna { token: "...", userData: {...} }
-            const { token, userData } = response.data;
-
-            // Salva no navegador para usar nas outras telas
-            localStorage.setItem("token", token);
-            localStorage.setItem("user", JSON.stringify(userData));
-
-            alert("Login realizado com sucesso!");
-            navigate("/homepage"); // Redireciona
+            if (data.role === 'ROLE_CUSTOMER') {
+                navigate("/homepage"); 
+            } else {
+                navigate("/painel-barbeiro");
+            }
 
         } catch (error) {
-            console.error(error);
-            alert("Erro ao fazer login. Verifique email e senha.");
+            setError("Falha no login. Verifique seus dados.");
         }
     };
 

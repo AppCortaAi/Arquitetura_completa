@@ -1,4 +1,3 @@
-import React from "react";
 import { Routes, Route } from 'react-router-dom'
 import RedirectionPage from "./pages/RedirectionPage";
 import StartPage from "./pages/StartPage"
@@ -12,7 +11,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<StartPage />} />
-      <Route path="/identificacao" element={<RedirectionPage />} />
+      <Route path="/identificacao" element={<RedirectionPage/>} />
       <Route path="/login" element= {<LoginPage/>}/>
       <Route path="/SignIn" element={<SignInPage/>}/>
       <Route path="/homepage" element={<HomePage/>}/>
