@@ -24,7 +24,7 @@ function Login_Inputs() {
             if (data.role === 'ROLE_CUSTOMER') {
                 navigate("/homepage"); 
             } else {
-                navigate("/painel-barbeiro");
+                navigate("/barberHome");
             }
 
         } catch (error) {
