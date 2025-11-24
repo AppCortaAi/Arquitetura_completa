@@ -2,62 +2,53 @@ package ifsp.edu.projeto.cortaai.validator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import java.util.InputMismatchException;
 
 public class CPFValidator implements ConstraintValidator<CPF, String> {
 
     @Override
     public boolean isValid(String cpf, ConstraintValidatorContext context) {
-        if (cpf == null || cpf.isEmpty()) {
+        if (cpf == null || cpf.trim().isEmpty()) {
+            return true; // Deixa a verificação de nulidade para @NotNull/@NotBlank
+        }
+
+        // Remove todos os caracteres que não são dígitos
+        final String unmaskedCpf = cpf.replaceAll("[^0-9]", "");
+
+        // Verifica o tamanho e se todos os dígitos são iguais
+        if (unmaskedCpf.length() != 11 || unmaskedCpf.matches("(\\d)\\1{10}")) {
             return false;
         }
 
-        cpf = cpf.replaceAll("\\.", "").replaceAll("-", "");
-
-        if (cpf.equals("00000000000") || cpf.equals("11111111111") ||
-                cpf.equals("22222222222") || cpf.equals("33333333333") ||
-                cpf.equals("44444444444") || cpf.equals("55555555555") ||
-                cpf.equals("66666666666") || cpf.equals("77777777777") ||
-                cpf.equals("88888888888") || cpf.equals("99999999999") ||
-                (cpf.length() != 11)) {
-            return (false);
-        }
-
-        char dig10, dig11;
-        int sm, i, r, num, peso;
-
         try {
-            sm = 0;
-            peso = 10;
-            for (i = 0; i < 9; i++) {
-                num = (int) (cpf.charAt(i) - 48);
-                sm = sm + (num * peso);
-                peso = peso - 1;
+            // --- Cálculo do Primeiro Dígito Verificador ---
+            int sum = 0;
+            for (int i = 0; i < 9; i++) {
+                sum += Integer.parseInt(String.valueOf(unmaskedCpf.charAt(i))) * (10 - i);
             }
 
-            r = 11 - (sm % 11);
-            if ((r == 10) || (r == 11))
-                dig10 = '0';
-            else
-                dig10 = (char) (r + 48);
+            int remainder = sum % 11;
+            int firstDigit = (remainder < 2) ? 0 : 11 - remainder;
 
-            sm = 0;
-            peso = 11;
-            for (i = 0; i < 10; i++) {
-                num = (int) (cpf.charAt(i) - 48);
-                sm = sm + (num * peso);
-                peso = peso - 1;
+            // Valida o primeiro dígito
+            if (firstDigit != Integer.parseInt(String.valueOf(unmaskedCpf.charAt(9)))) {
+                return false;
             }
 
-            r = 11 - (sm % 11);
-            if ((r == 10) || (r == 11))
-                dig11 = '0';
-            else
-                dig11 = (char) (r + 48);
+            // --- Cálculo do Segundo Dígito Verificador ---
+            sum = 0;
+            for (int i = 0; i < 10; i++) {
+                sum += Integer.parseInt(String.valueOf(unmaskedCpf.charAt(i))) * (11 - i);
+            }
 
-            return (dig10 == cpf.charAt(9)) && (dig11 == cpf.charAt(10));
-        } catch (InputMismatchException erro) {
-            return (false);
+            remainder = sum % 11;
+            int secondDigit = (remainder < 2) ? 0 : 11 - remainder;
+
+            // Valida o segundo dígito e retorna o resultado final
+            return secondDigit == Integer.parseInt(String.valueOf(unmaskedCpf.charAt(10)));
+
+        } catch (NumberFormatException e) {
+            // Caso algum caractere não seja um número após a limpeza (improvável, mas seguro)
+            return false;
         }
     }
 }

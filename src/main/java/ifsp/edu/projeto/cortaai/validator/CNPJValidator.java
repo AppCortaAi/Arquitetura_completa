@@ -2,66 +2,56 @@ package ifsp.edu.projeto.cortaai.validator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import java.util.InputMismatchException;
 
 public class CNPJValidator implements ConstraintValidator<CNPJ, String> {
 
+    private static final int TAMANHO_CNPJ_SEM_DV = 12;
+    // Regex ajustada para NÃO fazer o toUpperCase antes da validação.
+    // Ela agora valida o formato original da string.
+    private static final String REGEX_FORMATACAO_VALIDA = "^[A-Z0-9]{14}$";
+    private static final String CNPJ_TODO_ZERADO = "00000000000000";
+
     @Override
     public boolean isValid(String cnpj, ConstraintValidatorContext context) {
-        if (cnpj == null || cnpj.isEmpty()) {
+        if (cnpj == null || cnpj.trim().isEmpty()) {
+            return true;
+        }
+
+        // 1. Normalização: Apenas remove a máscara. NÃO converte para maiúsculas ainda.
+        final String cnpjSemMascara = cnpj.replaceAll("[./-]", "");
+
+        // 2. Validação de Formato: Verifica se o formato original (sem máscara) é válido.
+        // Isso vai rejeitar CNPJs com letras minúsculas, como "1345c3A5000106".
+        if (!cnpjSemMascara.matches(REGEX_FORMATACAO_VALIDA) || cnpjSemMascara.equals(CNPJ_TODO_ZERADO)) {
             return false;
         }
 
-        cnpj = cnpj.replaceAll("\\.", "").replaceAll("/", "").replaceAll("-", "");
+        // 3. Validação dos Dígitos Verificadores
+        String baseCnpj = cnpjSemMascara.substring(0, TAMANHO_CNPJ_SEM_DV);
+        String dvInformado = cnpjSemMascara.substring(TAMANHO_CNPJ_SEM_DV);
 
-        if (cnpj.equals("00000000000000") || cnpj.equals("11111111111111") ||
-                cnpj.equals("22222222222222") || cnpj.equals("33333333333333") ||
-                cnpj.equals("44444444444444") || cnpj.equals("55555555555555") ||
-                cnpj.equals("66666666666666") || cnpj.equals("77777777777777") ||
-                cnpj.equals("88888888888888") || cnpj.equals("99999999999999") ||
-                (cnpj.length() != 14)) {
-            return (false);
+        String dvCalculado = calculaDV(baseCnpj);
+        return dvCalculado.equals(dvInformado);
+    }
+
+    private String calculaDV(String baseCnpj) {
+        String dv1 = String.valueOf(calculaDigito(baseCnpj));
+        String dv2 = String.valueOf(calculaDigito(baseCnpj + dv1));
+        return dv1 + dv2;
+    }
+
+    private int calculaDigito(String base) {
+        final int[] pesos = { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
+        final int valorBaseAscii = (int) '0';
+        int soma = 0;
+
+        for (int i = base.length() - 1; i >= 0; i--) {
+            int valorCaracter = (int) base.charAt(i) - valorBaseAscii;
+            soma += valorCaracter * pesos[pesos.length - base.length() + i];
         }
 
-        char dig13, dig14;
-        int sm, i, r, num, peso;
+        int resto = soma % 11;
 
-        try {
-            sm = 0;
-            peso = 2;
-            for (i = 11; i >= 0; i--) {
-                num = (int) (cnpj.charAt(i) - 48);
-                sm = sm + (num * peso);
-                peso = peso + 1;
-                if (peso == 10)
-                    peso = 2;
-            }
-
-            r = sm % 11;
-            if ((r == 0) || (r == 1))
-                dig13 = '0';
-            else
-                dig13 = (char) ((11 - r) + 48);
-
-            sm = 0;
-            peso = 2;
-            for (i = 12; i >= 0; i--) {
-                num = (int) (cnpj.charAt(i) - 48);
-                sm = sm + (num * peso);
-                peso = peso + 1;
-                if (peso == 10)
-                    peso = 2;
-            }
-
-            r = sm % 11;
-            if ((r == 0) || (r == 1))
-                dig14 = '0';
-            else
-                dig14 = (char) ((11 - r) + 48);
-
-            return (dig13 == cnpj.charAt(12)) && (dig14 == cnpj.charAt(13));
-        } catch (InputMismatchException erro) {
-            return (false);
-        }
+        return (resto < 2) ? 0 : 11 - resto;
     }
 }
