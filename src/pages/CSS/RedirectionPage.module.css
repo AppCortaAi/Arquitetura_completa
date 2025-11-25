@@ -3,9 +3,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    height: 35rem;
+    max-height: 100%;
     justify-content: space-evenly;
-
     width: auto;
     margin: 0px auto;
     padding: 15px 50px;

@@ -1,0 +1,11 @@
+.agendamentoPage_container{
+    position: relative;
+    background-color: blue;
+    width: 40vw;
+    height: 100%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+

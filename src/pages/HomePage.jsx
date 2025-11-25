@@ -10,7 +10,7 @@ function HomePage() {
     <div className={Styles.homepage_container}>
       <Navbar/>
       <SearchBar/>
-      <Favorite_barbershops/>
+      {/* <Favorite_barbershops/> */}
       <div className={Styles.h3_container_homepage}>
       <h3>Barbearias Disponiveis</h3>
       </div>
