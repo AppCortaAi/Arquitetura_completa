@@ -7,6 +7,7 @@ import HomePage from "./pages/HomePage";
 import Agendamento from "./pages/Agendamento";
 import BarberHomePage from './pages/BarberHomePage';
 import AgendamentoPage from './pages/AgendamentoPage';
+import CreateBarbershopPage from './pages/CreateBarbershopPage';
 
 
 function AppRoutes() {
@@ -20,6 +21,7 @@ function AppRoutes() {
       <Route path="/agendamento" element={<Agendamento/>}/>
       <Route path='/agendamentoPage' element={<AgendamentoPage/>}/>
       <Route path='/barberHome' element={<BarberHomePage/>}/>
+      <Route path='/create-barbershop' element={<CreateBarbershopPage/>}/>
     </Routes>
   )
 }

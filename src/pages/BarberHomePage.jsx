@@ -35,9 +35,12 @@ function BarberHomePage() {
       });
   }, [navigate]);
 
+ // ...
   const handleCreateShop = () => {
-      alert("Em breve: Página de Criar Barbearia");
+      // Atualizado: Navega para a página de criação
+      navigate('/create-barbershop');
   };
+// ...
 
   const handleJoinShop = () => {
       const cnpj = prompt("Digite o CNPJ da barbearia:");
