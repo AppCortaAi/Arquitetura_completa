@@ -1,0 +1,22 @@
+.section {
+    margin-bottom: 25px;
+}
+
+.services {
+    display: flex;
+    gap: 10px;
+}
+
+.option {
+    background: #525252;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    color: white;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+.active {
+    border-color: #c8a009;
+    background-color: #50462a;
+    color: #c19006;
+}
