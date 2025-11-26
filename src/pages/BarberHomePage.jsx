@@ -1,86 +1,97 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Corrigido import
 import api from '../services/api';
-// Você pode criar um CSS específico depois, por enquanto usaremos estilo inline ou reutilizaremos
-import Styles from './CSS/HomePage.module.css'; 
 
 function BarberHomePage() {
-    const navigate = useNavigate();
-    const [barberInfo, setBarberInfo] = useState(null);
-    const [loading, setLoading] = useState(true);
+  const [barber, setBarber] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        // Busca os dados do barbeiro logado para saber se ele tem loja
-        const fetchMe = async () => {
-            try {
-                const response = await api.get('/barbers/me');
-                setBarberInfo(response.data); // O DTO tem o campo 'barbershopId' ou similar
-            } catch (error) {
-                console.error("Erro ao carregar perfil", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchMe();
-    }, []);
+  useEffect(() => {
+    // 1. Recupera o ID do barbeiro que salvamos no login (authService.js)
+    const userId = localStorage.getItem('userId');
 
-    const handleCreateShop = () => {
-        // Aqui você levaria para um formulário de "Criar Barbearia"
-        // Por enquanto, vamos usar um prompt só para testar a API
-        alert("Funcionalidade de Criar Loja será implementada na próxima etapa!");
-    };
+    if (!userId) {
+        alert("Erro: Usuário não identificado. Faça login novamente.");
+        navigate('/login');
+        return;
+    }
 
-    const handleJoinShop = () => {
-        const cnpj = prompt("Digite o CNPJ da barbearia que deseja entrar:");
-        if (cnpj) {
-            api.post('/barbershops/join-request', { cnpj })
-               .then(() => alert("Solicitação enviada! Aguarde o dono aceitar."))
-               .catch(err => alert("Erro ao solicitar entrada. Verifique o CNPJ."));
+    // 2. Usa a rota existente passando o ID correto
+    // De: api.get('/barbers/me')  <-- O ERRO ESTAVA AQUI
+    // Para:
+    api.get(`/barbers/${userId}`) 
+      .then(response => {
+        setBarber(response.data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Erro ao carregar perfil", error);
+        setLoading(false);
+        // Se der erro 403/401, pode redirecionar para login
+        if (error.response && (error.response.status === 403 || error.response.status === 401)) {
+            navigate('/login');
         }
-    };
+      });
+  }, [navigate]);
 
-    if (loading) return <div style={{color:'white', textAlign:'center', marginTop:'50px'}}>Carregando...</div>;
+  const handleCreateShop = () => {
+      alert("Em breve: Página de Criar Barbearia");
+  };
 
-    return (
-        <div style={{ backgroundColor: '#1E1E1E', minHeight: '100vh', color: 'white', padding: '20px' }}>
-            <h1 style={{ textAlign: 'center' }}>Painel do Barbeiro</h1>
+  const handleJoinShop = () => {
+      const cnpj = prompt("Digite o CNPJ da barbearia:");
+      if(cnpj) {
+          api.post('/barbershops/join-request', { cnpj })
+             .then(() => alert("Pedido enviado! Aguarde o dono aceitar."))
+             .catch(() => alert("Erro. Verifique o CNPJ."));
+      }
+  };
+
+  if (loading) return <div style={{color:'white', textAlign:'center', padding:'50px'}}>Carregando...</div>;
+
+  return (
+    <div style={{ backgroundColor: '#1E1E1E', minHeight: '100vh', color: 'white', padding: '20px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             
-            <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-                <h2>Bem-vindo, {barberInfo?.name}!</h2>
-                
-                {/* LÓGICA DO FLUXO: Se não tem barbearia vinculada, mostra opções */}
-                {!barberInfo?.barbershopId ? (
-                    <div style={{ marginTop: '50px', padding: '30px', border: '1px solid #D4AF37', borderRadius: '10px' }}>
-                        <h3>Você ainda não está vinculado a uma Barbearia.</h3>
-                        <p>O que deseja fazer?</p>
-                        
-                        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '30px' }}>
-                            <button 
-                                onClick={handleCreateShop}
-                                style={{ padding: '15px 30px', background: '#D4AF37', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-                            >
-                                Criar Minha Barbearia (Sou Dono)
-                            </button>
+            <header style={{ textAlign: 'center', marginBottom: '40px', borderBottom: '1px solid #333', paddingBottom: '20px' }}>
+                <h1>Painel do Profissional</h1>
+                <p>Bem-vindo, {barber?.name}</p>
+            </header>
 
-                            <button 
-                                onClick={handleJoinShop}
-                                style={{ padding: '15px 30px', background: '#333', color: 'white', border: '1px solid white', borderRadius: '5px', cursor: 'pointer' }}
-                            >
-                                Entrar em uma Barbearia (Sou Funcionário)
-                            </button>
-                        </div>
+            {/* Se não tiver barbearia vinculada, mostra opções */}
+            {!barber?.barbershopId ? (
+                <div style={{ textAlign: 'center', padding: '40px', background: '#2A2A2A', borderRadius: '10px' }}>
+                    <h2 style={{ color: '#D4AF37' }}>Você ainda não faz parte de uma Barbearia</h2>
+                    <p style={{ marginBottom: '30px', color: '#ccc' }}>Escolha como deseja começar:</p>
+                    
+                    <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button 
+                            onClick={handleCreateShop}
+                            style={{ padding: '15px 30px', fontSize: '1rem', cursor: 'pointer', backgroundColor: '#D4AF37', border: 'none', borderRadius: '5px', fontWeight: 'bold' }}
+                        >
+                            🏢 Criar Minha Barbearia
+                        </button>
+                        <button 
+                            onClick={handleJoinShop}
+                            style={{ padding: '15px 30px', fontSize: '1rem', cursor: 'pointer', backgroundColor: 'transparent', border: '2px solid #D4AF37', color: '#D4AF37', borderRadius: '5px', fontWeight: 'bold' }}
+                        >
+                            🤝 Entrar em Barbearia Existente
+                        </button>
                     </div>
-                ) : (
-                    /* Se JÁ TEM barbearia, mostra a agenda */
-                    <div style={{ marginTop: '30px' }}>
-                        <h3>Sua Agenda de Hoje</h3>
-                        <p>Aqui entrará o componente de Meus Agendamentos (Barbeiro)</p>
-                        {/* <MeusAgendamentos /> */}
-                    </div>
-                )}
-            </div>
+                </div>
+            ) : (
+                /* Painel Principal do Barbeiro com Loja */
+                <div>
+                    <h2>Sua Agenda</h2>
+                    <p>Loja Atual: {barber.barbershopName || "Minha Barbearia"}</p>
+                    {/* Componente de Agenda virá aqui */}
+                </div>
+            )}
+
         </div>
-    );
+    </div>
+  );
 }
 
 export default BarberHomePage;
