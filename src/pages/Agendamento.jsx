@@ -1,91 +1,186 @@
-import React, { useState } from "react";
-import styles from "./CSS/Agendamento.module.css";
 
-export default function Agendamento() {
-  const [selectedService, setSelectedService] = useState("Corte de Cabelo");
-  const [selectedBarber, setSelectedBarber] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Header from '../components/AgendamentoPage/Header';
+import ServicesAgendamento from '../components/AgendamentoPage/ServicesAgendamento';
+// Vamos usar um CSS Module para os botões de horário ficarem bonitos
+import Styles from './CSS/AgendamentoPage.module.css'; 
+import { getShopServices, getShopBarbers } from '../services/barbershopService';
+import { createAppointment, getBarberAvailability } from '../services/appointmentService'; // Importe a nova função
 
-  const services = ["Corte de Cabelo", "Barba", "Corte e Barba"];
+function AgendamentoPage() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { barbershopId, barbershopName } = location.state || {};
 
-  const barbers = [
-    { id: 1, name: "João Silva", status: "Disponível", image: "/img1.jpg" },
-    { id: 2, name: "Carlos Souza", status: "Disponível", image: "/img2.jpg" },
-    { id: 3, name: "Pedro Almeida", status: "Ocupado", image: "/img3.jpg" },
-  ];
+    const [services, setServices] = useState([]);
+    const [barbers, setBarbers] = useState([]);
+    
+    // Estados do Formulário
+    const [selectedServices, setSelectedServices] = useState([]); 
+    const [selectedBarber, setSelectedBarber] = useState("");     
+    const [date, setDate] = useState("");
+    const [selectedTime, setSelectedTime] = useState(""); // Horário clicado
+    
+    // Estado para os slots livres vindos do banco
+    const [availableSlots, setAvailableSlots] = useState([]);
+    const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const times = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+    useEffect(() => {
+        if (!barbershopId) {
+            navigate('/homepage');
+            return;
+        }
+        Promise.all([
+            getShopServices(barbershopId),
+            getShopBarbers(barbershopId)
+        ]).then(([servicesData, barbersData]) => {
+            setServices(servicesData);
+            setBarbers(barbersData);
+        });
+    }, [barbershopId, navigate]);
 
-  const canConfirm = selectedService && selectedBarber && selectedTime;
+    // Sempre que Barbeiro, Data ou Serviços mudarem, buscamos os horários
+    useEffect(() => {
+        const fetchAvailability = async () => {
+            // Só busca se tiver tudo preenchido
+            if (selectedBarber && date && selectedServices.length > 0) {
+                setLoadingSlots(true);
+                setAvailableSlots([]); // Limpa anteriores
+                setSelectedTime("");   // Reseta seleção
 
-  return (
-    <div className={styles.container}>
-      <h2 className={styles.title}>Agendamento</h2>
+                // 1. Calcula duração total dos serviços marcados
+                const totalDuration = services
+                    .filter(s => selectedServices.includes(s.id))
+                    .reduce((total, s) => total + s.durationMinutes, 0);
 
-      {/* Serviços */}
-      <section className={styles.section}>
-        <h3>Selecione o Serviço</h3>
-        <div className={styles.services}>
-          {services.map(service => (
-            <button
-              key={service}
-              className={`${styles.option} ${selectedService === service ? styles.active : ""}`}
-              onClick={() => setSelectedService(service)}
-            >
-              {service}
-            </button>
-          ))}
-        </div>
-      </section>
+                // 2. Chama a API
+                const slots = await getBarberAvailability(selectedBarber, date, totalDuration);
+                setAvailableSlots(slots);
+                setLoadingSlots(false);
+            }
+        };
 
-      {/* Barbeiros */}
-      <section className={styles.section}>
-        <h3>Selecione o Barbeiro</h3>
-        <div className={styles.barberGrid}>
-          {barbers.map(barber => (
-            <div
-              key={barber.id}
-              className={`${styles.barberCard} ${selectedBarber === barber.id ? styles.selected : ""}`}
-              onClick={() => barber.status !== "Ocupado" && setSelectedBarber(barber.id)}
-            >
-              <img src={barber.image} alt={barber.name} />
-              <p className={styles.name}>{barber.name}</p>
-              <span
-                className={`${styles.status} ${
-                  barber.status === "Disponível" ? styles.available : styles.busy
-                }`}
-              >
-                {barber.status}
-              </span>
+        fetchAvailability();
+    }, [selectedBarber, date, selectedServices, services]);
+
+    const toggleService = (serviceId) => {
+        setSelectedServices(prev => 
+            prev.includes(serviceId) ? prev.filter(id => id !== serviceId) : [...prev, serviceId]
+        );
+    };
+
+    const handleConfirm = async () => {
+        if (!selectedTime) {
+            alert("Por favor, selecione um horário.");
+            return;
+        }
+
+        try {
+            // Formata data ISO combinando a data escolhida com o horário do slot
+            // O slot vem como "09:00:00", precisamos apenas de "09:00"
+            const timePart = selectedTime.substring(0, 5); 
+            const dateTime = new Date(`${date}T${timePart}:00`).toISOString();
+
+            await createAppointment({
+                barbershopId,
+                barberId: selectedBarber,
+                activityIds: selectedServices,
+                startTime: dateTime
+            });
+
+            alert("Agendamento Confirmado!");
+            navigate('/meus-agendamentos');
+        } catch (error) {
+            alert("Erro ao agendar. Tente novamente.");
+        }
+    };
+
+    return (
+        <div className={Styles.page_container}>
+            <Header title={barbershopName || "Barbearia"} />
+
+            <div className={Styles.content_container}>
+                
+                {/* 1. Serviços */}
+                <h3 className={Styles.section_title}>1. Serviços</h3>
+                <div className={Styles.services_list}>
+                    {services.map(service => (
+                        <ServicesAgendamento 
+                            key={service.id}
+                            data={service}
+                            isSelected={selectedServices.includes(service.id)}
+                            onToggle={() => toggleService(service.id)}
+                        />
+                    ))}
+                </div>
+
+                {/* 2. Profissional */}
+                <h3 className={Styles.section_title}>2. Profissional</h3>
+                <select 
+                    value={selectedBarber} 
+                    onChange={(e) => setSelectedBarber(e.target.value)}
+                    className={Styles.custom_select}
+                >
+                    <option value="">Selecione...</option>
+                    {barbers.map(barber => (
+                        <option key={barber.id} value={barber.id}>{barber.name}</option>
+                    ))}
+                </select>
+
+                {/* 3. Data */}
+                <h3 className={Styles.section_title}>3. Data</h3>
+                <input 
+                    type="date" 
+                    value={date} 
+                    onChange={e => setDate(e.target.value)}
+                    className={Styles.date_input}
+                    min={new Date().toISOString().split('T')[0]} // Impede datas passadas
+                />
+
+                {/* 4. Horários Disponíveis (Dinâmico) */}
+                {selectedBarber && date && selectedServices.length > 0 && (
+                    <div style={{ marginTop: '20px' }}>
+                        <h3 className={Styles.section_title}>4. Horários Livres</h3>
+                        
+                        {loadingSlots ? (
+                            <p style={{color:'white'}}>Buscando horários...</p>
+                        ) : availableSlots.length > 0 ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px' }}>
+                                {availableSlots.map((slot, index) => {
+                                    // Formata "09:00:00" para "09:00" visualmente
+                                    const timeLabel = slot.substring(0, 5);
+                                    return (
+                                        <button
+                                            key={index}
+                                            onClick={() => setSelectedTime(slot)}
+                                            style={{
+                                                padding: '10px',
+                                                borderRadius: '5px',
+                                                border: selectedTime === slot ? '2px solid #D4AF37' : '1px solid #444',
+                                                backgroundColor: selectedTime === slot ? '#D4AF37' : '#333',
+                                                color: selectedTime === slot ? '#000' : '#fff',
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
+                                            {timeLabel}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <p style={{color:'#F44336'}}>Nenhum horário disponível para esta data/duração.</p>
+                        )}
+                    </div>
+                )}
+
+                <button onClick={handleConfirm} className={Styles.confirm_button} disabled={!selectedTime}>
+                    Confirmar Agendamento
+                </button>
             </div>
-          ))}
         </div>
-      </section>
-
-      {/* Horários */}
-      <section className={styles.section}>
-        <h3>Selecione a Data e Horário</h3>
-
-        <div className={styles.timesGrid}>
-          {times.map(time => (
-            <button
-              key={time}
-              className={`${styles.time} ${selectedTime === time ? styles.activeTime : ""}`}
-              onClick={() => setSelectedTime(time)}
-            >
-              {time}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Botão Final */}
-      <button
-        className={`${styles.confirmButton} ${!canConfirm ? styles.disabled : ""}`}
-        disabled={!canConfirm}
-      >
-        Confirmar Agendamento
-      </button>
-    </div>
-  );
+    );
 }
+
+export default AgendamentoPage;

@@ -1,11 +1,16 @@
 import Styles from "./MenuNavBar.module.css"
+import { useNavigate } from 'react-router-dom';
+
 function MenuNavBar() {
+
+  const navigate = useNavigate();
+
   return (
     <div className={Styles.MenuNavBar_container}>
         <div>
             <h4>Inicio</h4>
         </div>
-         <div>
+         <div onClick={() => navigate('/meus-agendamentos')}>
             <h4>Meus Atendimentos</h4>
         </div>
     </div>

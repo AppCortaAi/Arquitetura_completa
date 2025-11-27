@@ -34,3 +34,20 @@ export const cancelAppointment = async (id) => {
     const response = await api.patch(`/appointments/${id}/cancel`);
     return response.data;
 };
+
+export const getBarberAvailability = async (barberId, date, duration) => {
+    // O Back-end espera: /api/barbers/{id}/availability?date=YYYY-MM-DD&duration=MINUTOS
+    try {
+        const response = await api.get(`/barbers/${barberId}/availability`, {
+            params: {
+                date: date,
+                duration: duration
+            }
+        });
+        return response.data; // Retorna lista de horários ["09:00:00", "09:30:00", ...]
+    } catch (error) {
+        console.error("Erro ao buscar disponibilidade:", error);
+        return [];
+    }
+};
+

@@ -8,6 +8,7 @@ import Agendamento from "./pages/Agendamento";
 import BarberHomePage from './pages/BarberHomePage';
 import AgendamentoPage from './pages/AgendamentoPage';
 import CreateBarbershopPage from './pages/CreateBarbershopPage';
+import MeusAgendamentosPage from './pages/MeusAgendamentosPage';
 
 
 function AppRoutes() {
@@ -18,10 +19,10 @@ function AppRoutes() {
       <Route path="/login" element= {<LoginPage/>}/>
       <Route path="/SignIn" element={<SignInPage/>}/>
       <Route path="/homepage" element={<HomePage/>}/>
-      <Route path="/agendamento" element={<Agendamento/>}/>
-      <Route path='/agendamentoPage' element={<AgendamentoPage/>}/>
+      <Route path='/agendamentoPage/:barbershopId' element={<AgendamentoPage/>}/>
       <Route path='/barberHome' element={<BarberHomePage/>}/>
       <Route path='/create-barbershop' element={<CreateBarbershopPage/>}/>
+      <Route path="/meus-agendamentos" element={<MeusAgendamentosPage />} />
     </Routes>
   )
 }

@@ -1,11 +1,162 @@
-.agendamentoPage_container{
-    position: relative;
-    background-color: blue;
-    width: 40vw;
-    height: 100%;
-    margin: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* Container principal da página */
+.page_container {
+    background-color: #333333; /* Um pouco mais escuro que o App.css para profundidade */
+    min-height: 100vh;
+    color: #e0e0e0;
+    font-family: 'Roboto', sans-serif;
+    padding-bottom: 60px;
+    box-sizing: border-box;
 }
 
+/* Centraliza o conteúdo e limita a largura em telas grandes */
+.content_container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px; /* Espaço entre as seções */
+}
+
+/* Estilo de "Cartão" para cada seção (Serviços, Barbeiro, Data, etc) */
+.section {
+    background-color: #1E1E1E;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Sombra suave */
+    border: 1px solid #333;
+}
+
+.section_title {
+    color: #c19006; /* Dourado da identidade */
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10px;
+    font-weight: 700;
+}
+
+/* Container da lista de serviços */
+.services_list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Inputs e Selects estilizados */
+.custom_select, .date_input {
+    width: 100%;
+    padding: 15px;
+    background-color: #2C2C2C;
+    border: 1px solid #444;
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    /* Remove estilo padrão do navegador */
+    appearance: none; 
+    -webkit-appearance: none;
+}
+
+.custom_select:focus, .date_input:focus {
+    border-color: #c19006;
+    box-shadow: 0 0 0 2px rgba(193, 144, 6, 0.2);
+}
+
+/* Ícone de seta customizado para o Select (opcional, truque de CSS) */
+.custom_select {
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23c19006%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px top 50%;
+    background-size: 12px auto;
+}
+
+/* Grade de Horários */
+.slots_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); /* Responsivo */
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.slot_button {
+    padding: 12px 0;
+    border-radius: 8px;
+    background-color: #2C2C2C;
+    border: 1px solid #444;
+    color: #bbb;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.95rem;
+}
+
+.slot_button:hover {
+    background-color: #3a3a3a;
+    border-color: #c19006;
+    color: white;
+}
+
+.slot_selected {
+    background-color: #c19006 !important;
+    color: #121212 !important; /* Texto escuro no fundo dourado para leitura */
+    border-color: #c19006 !important;
+    font-weight: bold;
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(193, 144, 6, 0.4);
+}
+
+/* Botão Confirmar (CTA) */
+.confirm_button {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #c19006, #eecb5f);
+    color: #1a1a1a;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(193, 144, 6, 0.3);
+}
+
+.confirm_button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(193, 144, 6, 0.5);
+}
+
+.confirm_button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.confirm_button:disabled {
+    background: #333;
+    color: #666;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* Textos informativos */
+.info_text {
+    color: #888;
+    text-align: center;
+    font-style: italic;
+    padding: 10px;
+}
+
+.error_text {
+    color: #ff6b6b;
+    text-align: center;
+    font-weight: bold;
+    background: rgba(255, 107, 107, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+}

@@ -1,28 +1,29 @@
-import Styles from "./CSS/ServicesAgendamento.module.css"
-import { useState } from "react";
+import React from 'react';
+import Styles from './CSS/ServicesAgendamento.module.css';
 
-function ServicesAgendamento() {
-
-    const [selectedService, setSelectedService] = useState("Corte de Cabelo");
-    const services = ["Corte de Cabelo", "Barba", "Corte e Barba"];
+// Recebe as props enviadas pelo AgendamentoPage.jsx
+function ServicesAgendamento({ data, isSelected, onToggle }) {
+    
+    // Formatação de moeda para ficar bonito (R$ 25,00)
+    const formattedPrice = new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(data.price);
 
     return (
-        <div className={Styles.section}>
-            <h3>Selecione o Serviço</h3>
-            <div className={Styles.services}>
-                {services.map(service => (
-                    <button
-                        key={service}
-                        className={`${Styles.option} ${selectedService === service ? Styles.active : ""}`}
-                        onClick={() => setSelectedService(service)}
-                    >
-                        {service}
-                    </button>
-                ))}
+        <div 
+            className={`${Styles.service_card} ${isSelected ? Styles.selected : ''}`} 
+            onClick={onToggle}
+        >
+            <div className={Styles.info}>
+                <span className={Styles.name}>{data.activityName}</span>
+                <span className={Styles.details}>{data.durationMinutes} min</span>
             </div>
-
+            <div className={Styles.price}>
+                {formattedPrice}
+            </div>
         </div>
-    )
+    );
 }
 
-export default ServicesAgendamento
+export default ServicesAgendamento;

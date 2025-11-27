@@ -27,3 +27,20 @@
     height: 100%;
     width: 40px;
 }
+
+.logout_button {
+    background: transparent;
+    border: 1px solid #F44336;
+    color: #F44336;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.logout_button:hover {
+    background-color: #F44336;
+    color: white;
+}

@@ -1,22 +1,58 @@
-.section {
-    margin-bottom: 25px;
-}
-
-.services {
+/* Card do Serviço Individual */
+.service_card {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2C2C2C;
+    border: 2px solid transparent; /* Borda invisível por padrão */
+    border-radius: 12px;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.option {
-    background: #525252;
-    border-radius: 10px;
-    border: 2px solid transparent;
-    color: white;
-    padding: 10px 15px;
-    cursor: pointer;
+/* Efeito Hover */
+.service_card:hover {
+    background-color: #363636;
 }
-.active {
-    border-color: #c8a009;
-    background-color: #50462a;
+
+/* Estado Selecionado */
+.selected {
+    background-color: rgba(193, 144, 6, 0.15); /* Fundo dourado bem transparente */
+    border-color: #c19006;
+}
+
+/* Informações do Texto */
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.details {
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+/* Preço */
+.price {
+    font-weight: 700;
     color: #c19006;
+    font-size: 1rem;
+}
+
+/* Ajuste de cor do texto quando selecionado */
+.selected .name {
+    color: #c19006;
+}
+.selected .details {
+    color: #ddd;
 }
