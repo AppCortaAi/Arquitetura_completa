@@ -12,10 +12,10 @@ const handleNavigation = (action) => {
     <div className='workscreen'>
       <div className='start_container'>
         <div className='image_container'>
-          <p>Logo</p>
+          <img src="./Icons/cortaAi.jpg" alt="Logo APP" />
         </div>
 
-        <h1 className='title_app'>CortaAI</h1>
+
 
         <div className='text_container'>
           <h1 className='slogan'>Seu Estilo, Sua Hora marcada.</h1>
