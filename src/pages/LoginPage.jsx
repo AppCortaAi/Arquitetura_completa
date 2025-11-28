@@ -1,5 +1,6 @@
 import Login_Inputs from "../components/Login/Login_Inputs"
 import Styles from "./CSS/LoginPage.module.css"
+import { Link } from "react-router-dom";
 
 function LoginPage() {
     return (
@@ -14,7 +15,7 @@ function LoginPage() {
             <Login_Inputs/>
 
             <div>
-                <h3>Não tem uma conta? Crie uma Agora</h3>
+                <h3>Não tem uma conta? <Link className={Styles.Link} to="/identificacao">Crie uma Agora</Link></h3>
             </div>
         </div>
     )

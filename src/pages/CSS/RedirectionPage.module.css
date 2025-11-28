@@ -88,3 +88,21 @@
 }
 
 
+@media (max-width: 768px) {
+    .redirection_buttons_container {
+        width: 90%; /* Aumenta a largura do container dos botões */
+        height: auto; /* Deixa a altura se ajustar ao conteúdo */
+        gap: 20px; /* Espaço entre os botões */
+    }
+
+    .redirection_buttons {
+        height: auto; /* Altura flexível */
+        padding: 20px; /* Mais espaço interno */
+    }
+    
+    .RedirectionPage_Container {
+        padding: 20px; /* Ajuste do padding geral */
+    }
+}
+
+

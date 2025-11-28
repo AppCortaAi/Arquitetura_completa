@@ -85,3 +85,14 @@
     font-family: Roboto;
     margin-top: 15px;
 }
+
+
+@media (max-width: 768px) {
+    .SignIn_inputs_container label {
+        width: 90%; /* Inputs largos no mobile */
+    }
+
+    .SignIn_button {
+        width: 90%;
+    }
+}

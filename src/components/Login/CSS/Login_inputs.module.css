@@ -85,3 +85,13 @@
     background-color: #ddb441;
     transition: 0.2s;
 }
+
+@media (max-width: 768px) {
+    .Login_Inputs_container label {
+        width: 90%; /* Aumenta a área de clique/digitação no celular */
+    }
+
+    .Login_button {
+        width: 90%; /* Botão grande para facilitar o toque */
+    }
+}

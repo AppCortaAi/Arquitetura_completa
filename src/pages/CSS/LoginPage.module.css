@@ -38,3 +38,37 @@
     font-family: Roboto;
 }
 
+.Link {
+  color: gold;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .3s ease, text-decoration .3s ease;
+}
+
+.Link:hover {
+  color: rgb(255, 215, 100);
+  text-decoration: underline;
+  transition: 0.2s
+}
+
+
+
+@media (max-width: 768px) {
+    .LoginPage_container {
+        width: 100%; /* Ocupa a largura total */
+        padding: 0 20px; /* Um pouco de respiro nas bordas */
+        box-sizing: border-box; /* Garante que o padding não estoure a largura */
+    }
+
+    .logo_container {
+        width: 120px; /* Logo um pouco menor */
+        height: 120px;
+        border-radius: 60px;
+    }
+
+    .title_login {
+        font-size: 2rem; /* Fonte ajustada */
+    }
+}
+

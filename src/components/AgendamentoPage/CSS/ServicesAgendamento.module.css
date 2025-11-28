@@ -42,14 +42,12 @@
     color: #aaa;
 }
 
-/* Preço */
 .price {
     font-weight: 700;
     color: #c19006;
     font-size: 1rem;
 }
 
-/* Ajuste de cor do texto quando selecionado */
 .selected .name {
     color: #c19006;
 }
