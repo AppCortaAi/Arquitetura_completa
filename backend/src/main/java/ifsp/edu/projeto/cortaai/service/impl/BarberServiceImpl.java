@@ -8,6 +8,7 @@ import ifsp.edu.projeto.cortaai.mapper.ActivityMapper;
 import ifsp.edu.projeto.cortaai.mapper.BarberMapper;
 import ifsp.edu.projeto.cortaai.mapper.BarbershopMapper;
 import ifsp.edu.projeto.cortaai.model.*;
+import org.springframework.transaction.annotation.Transactional;
 import ifsp.edu.projeto.cortaai.model.enums.AppointmentStatus;
 import ifsp.edu.projeto.cortaai.model.enums.JoinRequestStatus;
 import ifsp.edu.projeto.cortaai.repository.*;
@@ -21,6 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -237,6 +240,7 @@ public class BarberServiceImpl implements BarberService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BarbershopDTO> listBarbershops() {
         return barbershopRepository.findAll().stream()
                 .map(barbershopMapper::toDTO)
@@ -803,69 +807,72 @@ public class BarberServiceImpl implements BarberService {
                 .orElseThrow(() -> new NotFoundException("Barbeiro não encontrado"));
 
         if (barber.getWorkStartTime() == null || barber.getWorkEndTime() == null) {
-            return new ArrayList<>(); // Expediente não definido
+            return new ArrayList<>();
         }
 
-        // 1. Definir os limites do dia de trabalho
+        // --- MUDANÇA 1: Definir o Fuso Horário do Brasil ---
+        final ZoneId zoneId = ZoneId.of("America/Sao_Paulo");
+
         final LocalTime workStart = barber.getWorkStartTime();
         final LocalTime workEnd = barber.getWorkEndTime();
 
-        // 2. Buscar agendamentos existentes (apenas os agendados ou concluídos)
-        OffsetDateTime startOfDay = date.atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime endOfDay = date.atTime(23, 59, 59).atOffset(ZoneOffset.UTC);
+        // --- MUDANÇA 2: Ajustar o intervalo de busca para cobrir o dia COMPLETO no fuso correto ---
+        // Se buscarmos apenas "00:00 UTC", perdemos os agendamentos da noite anterior no Brasil
+        // Aqui pegamos o inicio e fim do dia no Brasil e convertemos para o Offset do banco para a busca.
+        OffsetDateTime startOfDay = date.atStartOfDay(zoneId).toOffsetDateTime();
+        OffsetDateTime endOfDay = date.atTime(LocalTime.MAX).atZone(zoneId).toOffsetDateTime();
 
         List<Appointments> existingAppointments = appointmentsRepository
                 .findByBarberIdAndStartTimeBetween(barberId, startOfDay, endOfDay)
                 .stream()
-                // Filtra agendamentos que não estão cancelados
                 .filter(a -> a.getStatus() != ifsp.edu.projeto.cortaai.model.enums.AppointmentStatus.CANCELLED)
-                // Ordena pela hora de início
                 .sorted(Comparator.comparing(Appointments::getStartTime))
                 .toList();
 
-        // 3. Criar uma lista de "blocos livres" (gaps)
         List<LocalTime[]> freeBlocks = new ArrayList<>();
         LocalTime currentPointer = workStart;
 
         for (Appointments appointment : existingAppointments) {
-            LocalTime appointmentStart = appointment.getStartTime().toLocalTime();
-            LocalTime appointmentEnd = appointment.getEndTime().toLocalTime();
+            // --- MUDANÇA 3: Converter o horário do agendamento (UTC) para o horário do Brasil ---
+            // Isso transforma o "12:00 UTC" de volta para "09:00 Brasil" antes de calcular
+            LocalTime appointmentStart = appointment.getStartTime().atZoneSameInstant(zoneId).toLocalTime();
+            LocalTime appointmentEnd = appointment.getEndTime().atZoneSameInstant(zoneId).toLocalTime();
 
-            // Se houver um vão entre o ponteiro atual e o início do agendamento
+            // Lógica para evitar erros caso um agendamento comece antes do expediente (casos raros)
+            if (appointmentEnd.isBefore(workStart)) continue;
+            if (appointmentStart.isAfter(workEnd)) break;
+
+            // Ajuste visual: Se o agendamento começa antes do ponteiro atual, ignoramos para evitar overlaps negativos
+            if (appointmentStart.isBefore(currentPointer)) {
+                currentPointer = appointmentEnd.isAfter(currentPointer) ? appointmentEnd : currentPointer;
+                continue;
+            }
+
             if (currentPointer.isBefore(appointmentStart)) {
                 freeBlocks.add(new LocalTime[]{currentPointer, appointmentStart});
             }
-            // Avança o ponteiro para o fim do agendamento atual
             currentPointer = appointmentEnd;
         }
 
-        // Adiciona o último bloco (do fim do último agendamento até o fim do expediente)
         if (currentPointer.isBefore(workEnd)) {
             freeBlocks.add(new LocalTime[]{currentPointer, workEnd});
         }
 
-        // 4. Verificar quais slots cabem nos blocos livres
         List<LocalTime> availableSlots = new ArrayList<>();
-        long durationLong = (long) durationInMinutes; // Converte para long para aritmética
+        long durationLong = (long) durationInMinutes;
 
         for (LocalTime[] block : freeBlocks) {
             LocalTime blockStart = block[0];
             LocalTime blockEnd = block[1];
 
-            // Itera dentro do bloco livre usando o intervalo definido no application.yml
             LocalTime potentialSlotStart = blockStart;
 
             while (potentialSlotStart.isBefore(blockEnd)) {
                 LocalTime potentialSlotEnd = potentialSlotStart.plusMinutes(durationLong);
 
-                // O slot cabe se:
-                // 1. O fim do slot não ultrapassa o fim do bloco
-                // 2. O fim do slot não ultrapassa o fim do expediente
                 if (!potentialSlotEnd.isAfter(blockEnd) && !potentialSlotEnd.isAfter(workEnd)) {
                     availableSlots.add(potentialSlotStart);
                 }
-
-                // Avança para o próximo ponto de verificação
                 potentialSlotStart = potentialSlotStart.plusMinutes(slotIntervalMinutes);
             }
         }
