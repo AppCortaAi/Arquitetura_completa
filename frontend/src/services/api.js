@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'https://api.cortaai.oneaction.space/api', // Ou seu link de produção
+    baseURL: '/api',
 });
 
 // Interceptador para adicionar o Token JWT em toda requisição
