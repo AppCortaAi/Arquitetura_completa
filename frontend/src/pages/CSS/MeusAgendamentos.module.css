@@ -1,0 +1,84 @@
+.container {
+    background-color: #121212;
+    min-height: 100vh;
+    color: #e0e0e0;
+    padding: 20px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.title {
+    color: #c19006;
+    border-bottom: 1px solid #333;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.card {
+    background-color: #1E1E1E;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between; /* Separa info do botão */
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    border-color: #c19006;
+}
+
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.date {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.details {
+    color: #aaa;
+    font-size: 0.9rem;
+}
+
+.status_SCHEDULED { color: #4CAF50; font-weight: bold; } /* Verde */
+.status_CANCELLED { color: #F44336; font-weight: bold; } /* Vermelho */
+.status_COMPLETED { color: #2196F3; font-weight: bold; } /* Azul */
+
+.cancelButton {
+    background-color: transparent;
+    border: 1px solid #F44336;
+    color: #F44336;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.cancelButton:hover {
+    background-color: #F44336;
+    color: white;
+}
+
+.empty {
+    text-align: center;
+    color: #666;
+    margin-top: 50px;
+}

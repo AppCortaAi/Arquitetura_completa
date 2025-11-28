@@ -1,0 +1,98 @@
+.SignIn_inputs_container {
+    position: relative;
+    width: 100%;
+    height: auto;
+    padding: 15px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.SignIn_inputs_container form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 0;
+    height: auto;
+}
+
+.SignIn_inputs_container label {
+    display: flex;
+    flex-direction: column;
+    width: 30vw;
+    text-align: left;
+    padding: 1.5vh 0px;
+    font-family: Roboto;
+}
+
+.title_register{
+    color: white;
+}
+
+#name_input,
+#email_input,
+#password_input,
+#confirm_password_input {
+    width: 98%;
+    height: 8vh;
+    border-radius: 8px;
+    background-color: #4F4F4F;
+    color: #A0A0A0;
+    padding-left: 8px;
+    font-family: Roboto;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.label_name p,
+.label_email p,
+.label_password p,
+.label_confirm_password p {
+    margin-left: 0.3vw;
+    margin-bottom: 0.5vh;
+    color: #FFF;
+}
+
+#name_input::placeholder,
+#email_input::placeholder,
+#password_input::placeholder,
+#confirm_password_input::placeholder {
+    margin-left: 1px;
+    font-family: Roboto;
+}
+
+.SignIn_button {
+    width: 75%;
+    height: 8vh;
+    border-radius: 8px;
+    margin-top: 2vh;
+    color: #333333;
+    background-color: #c19006;
+    cursor: pointer;
+    font-family: Roboto;
+    font-size: 18px;
+    margin: auto;
+}
+
+.SignIn_button:hover {
+    background-color: #ddb441;
+    transition: 0.2s;
+}
+
+.login_link {
+    color: white;
+    font-family: Roboto;
+    margin-top: 15px;
+}
+
+
+@media (max-width: 768px) {
+    .SignIn_inputs_container label {
+        width: 90%; /* Inputs largos no mobile */
+    }
+
+    .SignIn_button {
+        width: 90%;
+    }
+}

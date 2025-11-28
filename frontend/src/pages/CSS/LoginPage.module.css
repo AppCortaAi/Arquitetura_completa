@@ -1,0 +1,81 @@
+.LoginPage_container{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40vw;
+    height: 100%;
+    margin: auto;
+}
+
+.logo_container{
+  background-color: white;
+  width: 160px;
+  height: 160px;
+  border-radius: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.title_login{
+  font-family: Roboto;
+  font-size: 6vh;
+  color: #FFF;
+  font-weight: bold;
+  margin-top: 2vh;
+}
+
+.content_container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.LoginPage_container h3{
+    color: #FFF;
+    font-family: Roboto;
+}
+
+.logo_container img{
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+
+.Link {
+  color: gold;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .3s ease, text-decoration .3s ease;
+}
+
+.Link:hover {
+  color: rgb(255, 215, 100);
+  text-decoration: underline;
+  transition: 0.2s
+}
+
+
+
+@media (max-width: 768px) {
+    .LoginPage_container {
+        width: 100%; /* Ocupa a largura total */
+        padding: 0 20px; /* Um pouco de respiro nas bordas */
+        box-sizing: border-box; /* Garante que o padding não estoure a largura */
+    }
+
+    .logo_container {
+        width: 120px; /* Logo um pouco menor */
+        height: 120px;
+        border-radius: 60px;
+    }
+
+    .title_login {
+        font-size: 2rem; /* Fonte ajustada */
+    }
+}
+

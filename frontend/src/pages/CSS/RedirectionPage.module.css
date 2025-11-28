@@ -1,0 +1,108 @@
+.RedirectionPage_Container{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-height: 100%;
+    justify-content: space-evenly;
+    width: auto;
+    margin: 0px auto;
+    padding: 15px 50px;
+}
+
+.RedirectionPage_Container h1{
+    color: white;
+    font-family: Roboto;
+    margin-top: 5px 
+}
+
+.RedirectionPage_Container h2{
+    color: #FFF;
+    font-family: Roboto;
+    font-size: 25px;
+    margin-top: 15px;
+}
+
+.title_redirection{
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.title_redirection img{
+    width: 70px;
+    height: 70px;
+}
+
+.redirection_buttons_container{
+    display: flex;
+    width: 25vw;
+    height: 60vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.redirection_buttons{
+    width: 90%;
+    height: 20vh;
+    margin-top: 15px;
+    background-color: #444;
+    color: white;
+    border-radius: 8px;
+    font-family: Roboto;
+    cursor: pointer;
+}
+
+.redirection_buttons img{
+    width: 35px;
+    height: 35px;
+    text-align: justify;
+    margin-bottom: 15px;
+}
+
+.title_button{
+    color: #FFF;
+    font-size: 15px;
+    margin-left: 15px;
+    text-align: left;
+}
+
+.text_button{
+    color: rgba(255, 255, 255, 0.589);
+    margin-left: 15px;
+    text-align: left;
+}
+
+.redirection_button_exit{
+    width: 80%;
+    height: 7vh;
+    background-color: #333333;
+    border: 1px solid rgba(255, 255, 255, 0.589);
+    color: rgba(255, 255, 255, 0.589);
+    font-size: 15px;
+    margin-top: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+
+@media (max-width: 768px) {
+    .redirection_buttons_container {
+        width: 90%; /* Aumenta a largura do container dos botões */
+        height: auto; /* Deixa a altura se ajustar ao conteúdo */
+        gap: 20px; /* Espaço entre os botões */
+    }
+
+    .redirection_buttons {
+        height: auto; /* Altura flexível */
+        padding: 20px; /* Mais espaço interno */
+    }
+    
+    .RedirectionPage_Container {
+        padding: 20px; /* Ajuste do padding geral */
+    }
+}
+
+

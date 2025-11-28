@@ -1,0 +1,32 @@
+.homepage_container{
+    position: relative;
+    display:flex;
+    margin: auto;
+    width: 40vw;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    font-family: Roboto;
+}
+
+.h3_container_homepage{
+    width: 100%;
+}
+
+.h3_container_homepage h3{
+    margin-left: 15px;
+}
+
+
+@media screen and (max-width: 767px) {
+
+    body{
+        width: 100%;
+        height: 100%;
+    }
+    .homepage_container{
+        width: 100%;
+        height: 100%;
+    }
+}

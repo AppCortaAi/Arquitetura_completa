@@ -1,0 +1,13 @@
+.barbershops_container{
+    position: relative;
+    width: 100%;
+    height: auto;
+    padding: 5px 0;
+    overflow-y: auto;
+    color: white;
+    font-family: Roboto;
+    scrollbar-width: none;
+    padding-top: 15px;
+    padding-bottom: 95px;
+    margin-top: 15px;
+}

@@ -1,0 +1,46 @@
+.navbar_container{
+    width: 100%;
+    height: 8vh;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: Roboto;
+}
+
+.navbar_container div{
+    width: 90%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar_container button{
+    background: none;
+    cursor: pointer;
+}
+
+.navbar_container img{
+    height: 100%;
+    width: 40px;
+}
+
+.logout_button {
+    background: transparent;
+    border: 1px solid #F44336;
+    color: #F44336;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.logout_button:hover {
+    background-color: #F44336;
+    color: white;
+}

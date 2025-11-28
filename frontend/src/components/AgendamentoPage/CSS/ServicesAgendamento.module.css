@@ -1,0 +1,56 @@
+/* Card do Serviço Individual */
+.service_card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2C2C2C;
+    border: 2px solid transparent; /* Borda invisível por padrão */
+    border-radius: 12px;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Efeito Hover */
+.service_card:hover {
+    background-color: #363636;
+}
+
+/* Estado Selecionado */
+.selected {
+    background-color: rgba(193, 144, 6, 0.15); /* Fundo dourado bem transparente */
+    border-color: #c19006;
+}
+
+/* Informações do Texto */
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.details {
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+.price {
+    font-weight: 700;
+    color: #c19006;
+    font-size: 1rem;
+}
+
+.selected .name {
+    color: #c19006;
+}
+.selected .details {
+    color: #ddd;
+}
