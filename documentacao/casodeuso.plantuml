@@ -1,0 +1,43 @@
+@startuml
+'instalar brew install graphviz antes de rodar (pra windows tem q baixar do navegador)
+left to right direction
+
+actor Cliente
+actor Barbeiro
+actor "Barbeiro Dono" as Dono
+
+rectangle "Sistema de Marketplace para Barbearias" {
+  usecase "Gerenciar Conta Pessoal" as UC1
+  usecase "Buscar e Visualizar Barbearias" as UC2
+  usecase "Realizar Agendamento" as UC3
+  usecase "Consultar Seus Agendamentos" as UC4
+  usecase "Gerenciar Vínculo com Loja" as UC5
+  usecase "Gerenciar Perfil Profissional" as UC6
+  usecase "Consultar Própria Agenda" as UC7
+  usecase "Registrar e Editar Loja" as UC8
+  usecase "Gerenciar Menu de Serviços" as UC9
+  usecase "Gerenciar Equipe da Loja" as UC10
+  usecase "Consultar Agenda da Loja" as UC11
+}
+
+' Relação de Herança
+Dono --|> Barbeiro
+
+' Relações do Cliente
+Cliente -- UC1
+Cliente -- UC2
+Cliente -- UC3
+Cliente -- UC4
+
+' Relações do Barbeiro
+Barbeiro -- UC1
+Barbeiro -- UC5
+Barbeiro -- UC6
+Barbeiro -- UC7
+
+' Relações do Dono
+Dono -- UC8
+Dono -- UC9
+Dono -- UC10
+Dono -- UC11
+@enduml
