@@ -49,42 +49,36 @@ export const logoutUser = () => {
 };
 
 export const registerBarber = async (barberData) => {
-    // Para enviar foto + dados, usamos FormData em vez de JSON
     const formData = new FormData();
     
-    // O Back-end espera um objeto JSON stringificado no campo 'barber'
-    // E o arquivo opcional no campo 'file'
-    // Mas no seu BarberController, ele usa @RequestPart("barber") 
-    
-    // Como estamos enviando via axios sem arquivo por enquanto, 
-    // podemos tentar enviar o JSON direto, MAS precisamos garantir
-    // que o Content-Type seja application/json se for só dados.
-    
-    // PORÉM, se o Controller exige @RequestPart, a melhor forma é enviar FormData:
-    
-    // Monta o objeto com os dados
+    // 1. Limpeza de caracteres especiais (CPF e Telefone)
+    // O backend usa @CPF e @Size(max=11), então espera apenas números.
+    const cleanCPF = barberData.documentCPF ? barberData.documentCPF.replace(/\D/g, '') : '';
+    const cleanTell = barberData.tell ? barberData.tell.replace(/\D/g, '') : '';
+
+    // 2. Monta o objeto JSON
+    // NOTA: Removemos a função formatTime que adicionava ":00".
+    // O HTML input type="time" já retorna "09:00", que é exatamente o que o teu @JsonFormat pede.
     const barberJson = JSON.stringify({
         name: barberData.name,
-        tell: barberData.tell,
         email: barberData.email,
-        documentCPF: barberData.documentCPF,
         password: barberData.password,
-        workStartTime: barberData.workStartTime, // "09:00"
-        workEndTime: barberData.workEndTime      // "18:00"
+        documentCPF: cleanCPF,       
+        tell: cleanTell,             
+        workStartTime: barberData.workStartTime, // Envia "09:00"
+        workEndTime: barberData.workEndTime      // Envia "18:00"
     });
 
-    // Adiciona ao FormData. 
-    // IMPORTANTE: O Content-Type desta parte deve ser application/json
+    // 3. Adiciona o JSON como Blob com o Content-Type EXPLICITO de application/json
+    // Isso é obrigatório para o @RequestPart("barber") do Java funcionar.
     const jsonBlob = new Blob([barberJson], { type: 'application/json' });
     formData.append('barber', jsonBlob);
 
-    // Se tiver foto (futuro): formData.append('file', file);
+    // Se tiver arquivo de foto no futuro, adicionas aqui:
+    // if (barberData.file) formData.append('file', barberData.file);
 
-    const response = await api.post('/barbers/register', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    });
+    // 4. Envia SEM o header Content-Type manual (o axios gera o boundary sozinho)
+    const response = await api.post('/barbers/register', formData);
 
     return response.data;
 };

@@ -7,7 +7,7 @@ function LoginPage() {
         <div className={Styles.LoginPage_container}>
             <div className={Styles.content_container}>
                 <div className={Styles.logo_container}>
-                    Logo
+                     <img src="./Icons/cortaAi.jpg" alt="Logo APP" />
                 </div>
                 <h1 className={Styles.title_login}>Acesse sua Conta</h1>
             </div>
