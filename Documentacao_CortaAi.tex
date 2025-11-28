@@ -249,7 +249,7 @@ O projeto "Cortaai" consiste no desenvolvimento de um sistema de marketplace de 
 \subsection*{Premissas}
 O sucesso do projeto baseia-se nas seguintes premissas:
 \begin{itemize}
-    \item \textbf{Infraestrutura Disponível:} Assume-se que a infraestrutura de nuvem (AWS Lambda, Amazon RDS) e os serviços de terceiros estarão disponíveis.
+    \item \textbf{Infraestrutura Disponível:} Assume-se que a infraestrutura de nuvem (AWS EC2, Amazon RDS) e os serviços de terceiros estarão disponíveis.
     \item \textbf{Credenciais Válidas:} Assume-se que as credenciais de acesso ao banco de dados e serviços externos são válidas.
     \item \textbf{Consumo da API:} Assume-se que uma aplicação frontend (como a prevista em React) será desenvolvida separadamente.
     \item \textbf{Conectividade:} Assume-se que os usuários finais terão acesso à internet.
@@ -260,7 +260,7 @@ O projeto está sujeito às seguintes restrições:
 \begin{itemize}
     \item \textbf{Tecnologia Backend:} O desenvolvimento está restrito ao ecossistema Java 17 e Spring Boot 3.3.4.
     \item \textbf{Persistência de Dados:} O sistema deve utilizar o banco de dados MySQL hospedado no Amazon RDS.
-    \item \textbf{Plataforma de Implantação:} A arquitetura de implantação deve ser serverless, utilizando AWS Lambda.
+    \item \textbf{Plataforma de Implantação:} A arquitetura de implantação deve será utilizando AWS EC2.
     \item \textbf{Armazenamento de Mídia:} O armazenamento de mídia está restrito ao uso do serviço Cloudinary.
     \item \textbf{Segurança:} O modelo de segurança deve obrigatoriamente implementar autenticação via token JWT.
 \end{itemize}
