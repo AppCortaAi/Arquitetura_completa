@@ -18,7 +18,7 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "https://www.cortaai.oneaction.space", // Versão com www
                         "https://cortaai.oneaction.space",   // ADICIONADO: Versão sem www
-                        "https://api.cortaai.oneaction.space"  // Para o Swagger
+                        "https://api.cortaai.oneaction.space",  // Para o Swagger
                         "http://localhost:5173", //local    
                         "http://localhost:3000" //Rota alternativa
                 )
@@ -40,4 +40,5 @@ public class WebConfig implements WebMvcConfigurer {
         }
     }
 }
+
 
